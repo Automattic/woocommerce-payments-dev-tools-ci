@@ -1,4 +1,4 @@
-# woocommerce-payments-dev-tools
+# woocommerce-payments-dev-mode
 
 Forces WCPAY_DEV_MODE to true.
 
