@@ -10,6 +10,7 @@
 class WC_Payments_Dev_Tools {
 	private const ID = 'wcpaydev';
 	private const DEV_MODE_OPTION = 'wcpaydev_dev_mode';
+	private const FORCE_DISCONNECTED_OPTION = 'wcpaydev_force_disconnected';
 	private const FORCE_ONBOARDING_OPTION = 'wcpaydev_force_onboarding';
 	private const REDIRECT_OPTION = 'wcpaydev_redirect';
 	private const REDIRECT_TO_OPTION = 'wcpaydev_redirect_to';
@@ -24,6 +25,7 @@ class WC_Payments_Dev_Tools {
 		add_filter( 'pre_http_request', [ __CLASS__, 'maybe_redirect_api_request' ], 10, 3 );
 		add_filter( 'wc_payments_get_oauth_data_args', [ __CLASS__, 'maybe_force_on_boarding' ], 10, 1 );
 		add_filter( 'wcpay_api_request_headers', [ __CLASS__, 'add_wcpay_request_headers' ], 10, 1 );
+		add_action( 'init', [ __CLASS__, 'maybe_force_disconnected' ] );
 	}
 
 	/**
@@ -101,6 +103,17 @@ class WC_Payments_Dev_Tools {
 	}
 
 	/**
+	 * Forces the plugin to act as disconnected by injecting an empty array into account cache
+	 */
+	public static function maybe_force_disconnected() {
+		if ( ! get_option( self::FORCE_DISCONNECTED_OPTION, false ) ) {
+			return;
+		}
+
+		set_transient( WC_Payments_Account::ACCOUNT_TRANSIENT, array() );
+	}
+
+	/**
 	 * Processes form submission on the settings page
 	 */
 	private static function maybe_handle_settings_save() {
@@ -117,6 +130,7 @@ class WC_Payments_Dev_Tools {
 
 			self::update_option_from_checkbox( self::DEV_MODE_OPTION );
 			self::update_option_from_checkbox( self::FORCE_ONBOARDING_OPTION );
+			self::update_option_from_checkbox( self::FORCE_DISCONNECTED_OPTION );
 			self::update_option_from_checkbox( self::REDIRECT_OPTION );
 			if ( isset( $_POST[ self::REDIRECT_TO_OPTION ] ) ) {
 				update_option( self::REDIRECT_TO_OPTION, $_POST[ self::REDIRECT_TO_OPTION ] );
@@ -175,6 +189,7 @@ class WC_Payments_Dev_Tools {
 			wp_nonce_field( 'wcpaydev-save-settings', 'wcpaydev-save-settings' );
 			self::render_checkbox( self::DEV_MODE_OPTION, 'Dev mode enabled' );
 			self::render_checkbox( self::FORCE_ONBOARDING_OPTION, 'Force onboarding' );
+			self::render_checkbox( self::FORCE_DISCONNECTED_OPTION, 'Force the plugin to act as disconnected from WcPay' );
 			self::render_checkbox( self::REDIRECT_OPTION, 'Enable API request redirection' );
 			?>
 			<p>
