@@ -19,7 +19,11 @@ class WC_Payments_Dev_Tools {
 	 */
 	public static function init() {
 		add_action( 'admin_menu', [ __CLASS__, 'add_admin_page' ] );
-		self::process_settings();
+
+		add_filter( 'wcpay_dev_mode', [ __CLASS__, 'maybe_enable_dev_mode' ], 10, 1 );
+		add_filter( 'pre_http_request', [ __CLASS__, 'maybe_redirect_api_request' ], 10, 3 );
+		add_filter( 'wc_payments_get_oauth_data_args', [ __CLASS__, 'maybe_force_on_boarding' ], 10, 1 );
+		add_filter( 'wcpay_api_request_headers', [ __CLASS__, 'add_wcpay_request_headers' ], 10, 1 );
 	}
 
 	/**
@@ -44,54 +48,56 @@ class WC_Payments_Dev_Tools {
 	}
 
 	/**
-	 * Adds hooks and defines depending on the settings
+	 * Enables the dev mode, based on this plugin's settings
 	 */
-	public static function process_settings() {
-		// define dev mode if enabled
-		if ( get_option( self::DEV_MODE_OPTION, false ) ) {
-			define( 'WCPAY_DEV_MODE', true );
+	public static function maybe_enable_dev_mode( $dev_mode ) {
+		return boolval( get_option( self::DEV_MODE_OPTION, false ) );
+	}
+
+	/**
+	 * Detects outgoing WcPay API requests and redirects them based on this plugin's settings
+	 * @param mixed $preempt
+	 * @param array $args
+	 * @param string $url
+	 */
+	public static function maybe_redirect_api_request( $preempt, $args, $url ) {
+		if ( false !== $preempt ) {
+			return $preempt;
 		}
 
-		// redirect api requests if enabled
-		if ( get_option( self::REDIRECT_OPTION, false ) ) {
-			$redirect_to = trailingslashit( self::get_redirect_to() );
-			add_filter(
-				'pre_http_request',
-				function( $preempt, $args, $url ) use ( $redirect_to ) {
-					if ( false !== $preempt ) {
-						return $preempt;
-					}
-
-					// detect the wcpay requests and route them
-					if ( 1 === preg_match( '/^https?:\/\/public-api\.wordpress\.com\/(.+?wcpay.+)/', $url, $matches ) ) {
-						return wp_remote_request( $redirect_to . $matches[1], $args );
-					}
-
-					return $preempt;
-				},
-				10,
-				3
-			);
+		// detect the wcpay requests
+		if ( 1 !== preg_match( '/^https?:\/\/public-api\.wordpress\.com\/(.+?wcpay.+)/', $url, $matches ) ) {
+			return $preempt;
 		}
 
-		// add the force_on_boarding arg if enabled
-		if ( get_option( self::FORCE_ONBOARDING_OPTION, false ) ) {
-			add_filter( 'wc_payments_get_oauth_data_args', function( $args ) {
-				$args['force_on_boarding'] = true;
-				return $args;
-			}, 10, 1 );
+		if ( ! get_option( self::REDIRECT_OPTION, false ) ) {
+			return $preempt;
 		}
 
-		// add sandbox xdebug cookie to the api requests
-		add_filter(
-			'wcpay_api_request_headers',
-			function ( $headers ) {
-				$headers['Cookie'] = 'XDEBUG_SESSION=XDEBUG_OMATTIC';
-				return $headers;
-			},
-			10,
-			1
-		);
+		$redirect_to = trailingslashit( self::get_redirect_to() );
+		return wp_remote_request( $redirect_to . $matches[1], $args );
+	}
+
+	/**
+	 * Adds force_on_boarding param to the onboarding request
+	 * @param array $args
+	 */
+	public static function maybe_force_on_boarding( $args ) {
+		if ( ! get_option( self::FORCE_ONBOARDING_OPTION, false ) ) {
+			return $args;
+		}
+
+		$args['force_on_boarding'] = true;
+		return $args;
+	}
+
+	/**
+	 * Adds xdebug cookie to the WcPay API requests
+	 * @param array $headers
+	 */
+	public static function add_wcpay_request_headers( $headers ) {
+		$headers['Cookie'] = 'XDEBUG_SESSION=XDEBUG_OMATTIC';
+		return $headers;
 	}
 
 	/**
