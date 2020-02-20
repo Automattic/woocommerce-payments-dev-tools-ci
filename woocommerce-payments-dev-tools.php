@@ -1,0 +1,216 @@
+<?php
+
+/**
+ * Plugin Name: WooCommerce Payments Dev Tools
+ * Description: Dev tools for WooCommerce Payments
+ * Author: Automattic
+ * Author URI: https://woocommerce.com/
+ */
+
+class WC_Payments_Dev_Tools {
+	private const ID = 'wcpaydev';
+	private const DEV_MODE_OPTION = 'wcpaydev_dev_mode';
+	private const FORCE_ONBOARDING_OPTION = 'wcpaydev_force_onboarding';
+	private const REDIRECT_OPTION = 'wcpaydev_redirect';
+	private const REDIRECT_TO_OPTION = 'wcpaydev_redirect_to';
+
+	/**
+	 * Entry point of the plugin
+	 */
+	public static function init() {
+		add_action( 'admin_menu', [ __CLASS__, 'add_admin_page' ] );
+		self::process_settings();
+	}
+
+	/**
+	 * Hooks into admin_menu and adds an admin page for this plugin
+	 */
+	public static function add_admin_page() {
+		add_menu_page(
+			'WcPay Dev',
+			'WcPay Dev',
+			'manage_options',
+			self::ID,
+			[ __CLASS__, 'admin_page' ]
+		);
+	}
+
+	/**
+	 * Admin page handler
+	 */
+	public static function admin_page() {
+		self::maybe_handle_settings_save();
+		self::admin_page_output();
+	}
+
+	/**
+	 * Adds hooks and defines depending on the settings
+	 */
+	public static function process_settings() {
+		// define dev mode if enabled
+		if ( get_option( self::DEV_MODE_OPTION, false ) ) {
+			define( 'WCPAY_DEV_MODE', true );
+		}
+
+		// redirect api requests if enabled
+		if ( get_option( self::REDIRECT_OPTION, false ) ) {
+			$redirect_to = trailingslashit( self::get_redirect_to() );
+			add_filter(
+				'pre_http_request',
+				function( $preempt, $args, $url ) use ( $redirect_to ) {
+					if ( false !== $preempt ) {
+						return $preempt;
+					}
+
+					// detect the wcpay requests and route them
+					if ( 1 === preg_match( '/^https?:\/\/public-api\.wordpress\.com\/(.+?wcpay.+)/', $url, $matches ) ) {
+						return wp_remote_request( $redirect_to . $matches[1], $args );
+					}
+
+					return $preempt;
+				},
+				10,
+				3
+			);
+		}
+
+		// add the force_on_boarding arg if enabled
+		if ( get_option( self::FORCE_ONBOARDING_OPTION, false ) ) {
+			add_filter( 'wc_payments_get_oauth_data_args', function( $args ) {
+				$args['force_on_boarding'] = true;
+				return $args;
+			}, 10, 1 );
+		}
+
+		// add sandbox xdebug cookie to the api requests
+		add_filter(
+			'wcpay_api_request_headers',
+			function ( $headers ) {
+				$headers['Cookie'] = 'XDEBUG_SESSION=XDEBUG_OMATTIC';
+				return $headers;
+			},
+			10,
+			1
+		);
+	}
+
+	/**
+	 * Processes form submission on the settings page
+	 */
+	private static function maybe_handle_settings_save() {
+		if ( isset( $_GET['wcpaydev-clear-cache'] ) ) {
+			check_admin_referer( 'wcpaydev-clear-cache' );
+
+			delete_transient( WC_Payments_Account::ACCOUNT_TRANSIENT );
+
+			wp_safe_redirect( self::get_settings_url() );
+		}
+
+		if ( isset( $_POST['wcpaydev-save-settings'] ) ) {
+			check_admin_referer( 'wcpaydev-save-settings', 'wcpaydev-save-settings' );
+
+			self::update_option_from_checkbox( self::DEV_MODE_OPTION );
+			self::update_option_from_checkbox( self::FORCE_ONBOARDING_OPTION );
+			self::update_option_from_checkbox( self::REDIRECT_OPTION );
+			if ( isset( $_POST[ self::REDIRECT_TO_OPTION ] ) ) {
+				update_option( self::REDIRECT_TO_OPTION, $_POST[ self::REDIRECT_TO_OPTION ] );
+			}
+
+			wp_safe_redirect( self::get_settings_url() );
+		}
+	}
+
+	/**
+	 * Updates the given option name from submitted POST values
+	 *
+	 * @param string $option_name
+	 */
+	private static function update_option_from_checkbox( $option_name ) {
+		$value = isset( $_POST[ $option_name ] ) && 'on' === $_POST[ $option_name ];
+		update_option( $option_name, $value );
+	}
+
+	/**
+	 * Renders a checkbox for the given option name with the given label
+	 *
+	 * @param string $option_name
+	 * @param string $label
+	 */
+	private static function render_checkbox( $option_name, $label ) {
+		?>
+		<p>
+			<input
+				type="checkbox"
+				id="<?php echo( $option_name ) ?>"
+				name="<?php echo( $option_name ) ?>"
+				<?php echo( get_option( $option_name, false ) ? 'checked' : '' ); ?>
+			/>
+			<label for="<?php echo( $option_name ) ?>">
+				<?php echo( $label ) ?>
+			</label>
+		</p>
+		<?php
+	}
+
+	/**
+	 * Outputs the markup for the admin page
+	 */
+	private static function admin_page_output() {
+		?>
+		<h1>WcPay Dev Utils</h1>
+		<p>
+			<a href="<?php echo wp_nonce_url( add_query_arg( [ 'wcpaydev-clear-cache' => '1' ], self::get_settings_url() ), 'wcpaydev-clear-cache' ); ?>">Clear Account cache</a>
+		</p>
+		<p>
+			<a href="<?php echo wp_nonce_url( add_query_arg( [ 'wcpay-connect' => '1' ], WC_Payment_Gateway_WCPay::get_settings_url() ), 'wcpay-connect' ) ?>">Reonboard</a>
+		</p>
+		<form action="<?php echo( self::get_settings_url() ) ?>" method="post">
+			<?php
+			wp_nonce_field( 'wcpaydev-save-settings', 'wcpaydev-save-settings' );
+			self::render_checkbox( self::DEV_MODE_OPTION, 'Dev mode enabled' );
+			self::render_checkbox( self::FORCE_ONBOARDING_OPTION, 'Force onboarding' );
+			self::render_checkbox( self::REDIRECT_OPTION, 'Enable API request redirection' );
+			?>
+			<p>
+				<label for="wcpaydev-redirect-to">
+					Redirect API requests to:
+				</label>
+				<input
+					type="text"
+					id="<?php echo( self::REDIRECT_TO_OPTION ); ?>"
+					name="<?php echo( self::REDIRECT_TO_OPTION ); ?>"
+					size="50"
+					value="<?php echo( self::get_redirect_to() );?>"
+				/>
+			</p>
+			<p>
+				<input type="submit" value="Submit" />
+			</p>
+		</form>
+		<?php
+	}
+
+	/**
+	 * Gets the redirect target url
+	 *
+	 * @return string
+	 */
+	private static function get_redirect_to() {
+		return get_option( self::REDIRECT_TO_OPTION, 'http://host.docker.internal:8086/wp-json/' );
+	}
+
+	/**
+	 * Gets the url for the admin page of this plugin
+	 *
+	 * @return string
+	 */
+	private static function get_settings_url() {
+		return admin_url( 'admin.php?page=' . self::ID );
+	}
+}
+
+function wcpay_dev_tools_init() {
+	WC_Payments_Dev_Tools::init();
+}
+
+add_action( 'plugins_loaded', 'wcpay_dev_tools_init' );
