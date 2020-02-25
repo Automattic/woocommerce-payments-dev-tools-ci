@@ -120,7 +120,7 @@ class WC_Payments_Dev_Tools {
 		if ( isset( $_GET['wcpaydev-clear-cache'] ) ) {
 			check_admin_referer( 'wcpaydev-clear-cache' );
 
-			delete_transient( WC_Payments_Account::ACCOUNT_TRANSIENT );
+			self::clear_account_cache();
 
 			wp_safe_redirect( self::get_settings_url() );
 		}
@@ -135,6 +135,8 @@ class WC_Payments_Dev_Tools {
 			if ( isset( $_POST[ self::REDIRECT_TO_OPTION ] ) ) {
 				update_option( self::REDIRECT_TO_OPTION, $_POST[ self::REDIRECT_TO_OPTION ] );
 			}
+
+			self::clear_account_cache();
 
 			wp_safe_redirect( self::get_settings_url() );
 		}
@@ -227,6 +229,10 @@ class WC_Payments_Dev_Tools {
 	 */
 	private static function get_settings_url() {
 		return admin_url( 'admin.php?page=' . self::ID );
+	}
+
+	private static function clear_account_cache() {
+		delete_transient( WC_Payments_Account::ACCOUNT_TRANSIENT );
 	}
 }
 
