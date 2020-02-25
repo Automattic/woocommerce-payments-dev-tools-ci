@@ -14,12 +14,14 @@ class WC_Payments_Dev_Tools {
 	private const FORCE_ONBOARDING_OPTION = 'wcpaydev_force_onboarding';
 	private const REDIRECT_OPTION = 'wcpaydev_redirect';
 	private const REDIRECT_TO_OPTION = 'wcpaydev_redirect_to';
+	private const DISPLAY_NOTICE = 'wcpaydev_display_notice';
 
 	/**
 	 * Entry point of the plugin
 	 */
 	public static function init() {
 		add_action( 'admin_menu', [ __CLASS__, 'add_admin_page' ] );
+		add_action( 'admin_notices', [ __CLASS__, 'add_notices' ] );
 
 		add_filter( 'wcpay_dev_mode', [ __CLASS__, 'maybe_enable_dev_mode' ], 10, 1 );
 		add_filter( 'pre_http_request', [ __CLASS__, 'maybe_redirect_api_request' ], 10, 3 );
@@ -135,6 +137,7 @@ class WC_Payments_Dev_Tools {
 			if ( isset( $_POST[ self::REDIRECT_TO_OPTION ] ) ) {
 				update_option( self::REDIRECT_TO_OPTION, $_POST[ self::REDIRECT_TO_OPTION ] );
 			}
+			self::update_option_from_checkbox( self::DISPLAY_NOTICE );
 
 			self::clear_account_cache();
 
@@ -157,15 +160,16 @@ class WC_Payments_Dev_Tools {
 	 *
 	 * @param string $option_name
 	 * @param string $label
+	 * @param bool   $default
 	 */
-	private static function render_checkbox( $option_name, $label ) {
+	private static function render_checkbox( $option_name, $label, $default = false ) {
 		?>
 		<p>
 			<input
 				type="checkbox"
 				id="<?php echo( $option_name ) ?>"
 				name="<?php echo( $option_name ) ?>"
-				<?php echo( get_option( $option_name, false ) ? 'checked' : '' ); ?>
+				<?php echo( get_option( $option_name, $default ) ? 'checked' : '' ); ?>
 			/>
 			<label for="<?php echo( $option_name ) ?>">
 				<?php echo( $label ) ?>
@@ -206,11 +210,50 @@ class WC_Payments_Dev_Tools {
 					value="<?php echo( self::get_redirect_to() );?>"
 				/>
 			</p>
+			<?php
+			self::render_checkbox( self::DISPLAY_NOTICE, 'Display notice about dev settings', true );
+			?>
 			<p>
 				<input type="submit" value="Submit" />
 			</p>
 		</form>
 		<?php
+	}
+
+	/**
+	 * Displays a notice about all the settings enabled in this plugin
+	 */
+	public static function add_notices() {
+		if ( ! get_option( self::DISPLAY_NOTICE, true ) ) {
+			return;
+		}
+
+		$enabled_options = [];
+
+		$notice = '<strong>WcPay dev tools enabled: </strong>';
+		if ( get_option( self::DEV_MODE_OPTION, false ) ) {
+			$enabled_options[] = 'Dev mode enabled';
+		}
+
+		if ( get_option( self::REDIRECT_OPTION, false ) ) {
+			$enabled_options[] = 'Redirecting API requests to ' . self::get_redirect_to();
+		}
+
+		if ( get_option( self::FORCE_ONBOARDING_OPTION, false ) ) {
+			$enabled_options[] = 'Forced onboarding';
+		}
+
+		if ( get_option( self::FORCE_DISCONNECTED_OPTION, false ) ) {
+			$enabled_options[] = 'Plugin forced to act as disconnected';
+		}
+
+		if ( empty( $enabled_options ) ) {
+			return;
+		}
+
+		$notice .= implode( ', ', $enabled_options );
+
+		echo '<div class="notice notice-warning wcpay-settings-notice"><p>' . $notice . '</p></div>';
 	}
 
 	/**
@@ -231,6 +274,9 @@ class WC_Payments_Dev_Tools {
 		return admin_url( 'admin.php?page=' . self::ID );
 	}
 
+	/**
+	 * Clears the wcpay account cache
+	 */
 	private static function clear_account_cache() {
 		delete_transient( WC_Payments_Account::ACCOUNT_TRANSIENT );
 	}
