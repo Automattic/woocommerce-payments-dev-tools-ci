@@ -184,12 +184,6 @@ class WC_Payments_Dev_Tools {
 	private static function admin_page_output() {
 		?>
 		<h1>WcPay Dev Utils</h1>
-		<p>
-			<a href="<?php echo wp_nonce_url( add_query_arg( [ 'wcpaydev-clear-cache' => '1' ], self::get_settings_url() ), 'wcpaydev-clear-cache' ); ?>">Clear Account cache</a>
-		</p>
-		<p>
-			<a href="<?php echo wp_nonce_url( add_query_arg( [ 'wcpay-connect' => '1' ], WC_Payment_Gateway_WCPay::get_settings_url() ), 'wcpay-connect' ) ?>">Reonboard</a>
-		</p>
 		<form action="<?php echo( self::get_settings_url() ) ?>" method="post">
 			<?php
 			wp_nonce_field( 'wcpaydev-save-settings', 'wcpaydev-save-settings' );
@@ -217,6 +211,12 @@ class WC_Payments_Dev_Tools {
 				<input type="submit" value="Submit" />
 			</p>
 		</form>
+		<p>
+			<a href="<?php echo wp_nonce_url( add_query_arg( [ 'wcpaydev-clear-cache' => '1' ], self::get_settings_url() ), 'wcpaydev-clear-cache' ); ?>">Clear Account cache</a>
+		</p>
+		<p>
+			<a href="<?php echo wp_nonce_url( add_query_arg( [ 'wcpay-connect' => '1' ], WC_Payment_Gateway_WCPay::get_settings_url() ), 'wcpay-connect' ) ?>">Reonboard</a>
+		</p>
 		<?php
 	}
 
