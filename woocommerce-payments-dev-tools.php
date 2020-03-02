@@ -55,7 +55,7 @@ class WC_Payments_Dev_Tools {
 	 * Enables the dev mode, based on this plugin's settings
 	 */
 	public static function maybe_enable_dev_mode( $dev_mode ) {
-		return boolval( get_option( self::DEV_MODE_OPTION, false ) );
+		return boolval( get_option( self::DEV_MODE_OPTION, true ) );
 	}
 
 	/**
@@ -187,7 +187,7 @@ class WC_Payments_Dev_Tools {
 		<form action="<?php echo( self::get_settings_url() ) ?>" method="post">
 			<?php
 			wp_nonce_field( 'wcpaydev-save-settings', 'wcpaydev-save-settings' );
-			self::render_checkbox( self::DEV_MODE_OPTION, 'Dev mode enabled' );
+			self::render_checkbox( self::DEV_MODE_OPTION, 'Dev mode enabled', true );
 			self::render_checkbox( self::FORCE_ONBOARDING_OPTION, 'Force onboarding' );
 			self::render_checkbox( self::FORCE_DISCONNECTED_OPTION, 'Force the plugin to act as disconnected from WcPay' );
 			self::render_checkbox( self::REDIRECT_OPTION, 'Enable API request redirection' );
@@ -231,7 +231,7 @@ class WC_Payments_Dev_Tools {
 		$enabled_options = [];
 
 		$notice = '<strong>WcPay dev tools enabled: </strong>';
-		if ( get_option( self::DEV_MODE_OPTION, false ) ) {
+		if ( get_option( self::DEV_MODE_OPTION, true ) ) {
 			$enabled_options[] = 'Dev mode enabled';
 		}
 
