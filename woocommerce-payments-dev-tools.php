@@ -20,6 +20,11 @@ class WC_Payments_Dev_Tools {
 	 * Entry point of the plugin
 	 */
 	public static function init() {
+		if ( ! class_exists( 'WC_Payments_Account' ) ) {
+			add_action( 'admin_menu', [ __CLASS__, 'add_disabled_page' ] );
+			return;
+		}
+
 		add_action( 'admin_menu', [ __CLASS__, 'add_admin_page' ] );
 		add_action( 'admin_notices', [ __CLASS__, 'add_notices' ] );
 
@@ -39,7 +44,8 @@ class WC_Payments_Dev_Tools {
 			'WcPay Dev',
 			'manage_options',
 			self::ID,
-			[ __CLASS__, 'admin_page' ]
+			[ __CLASS__, 'admin_page' ],
+			'dashicons-palmtree'
 		);
 	}
 
@@ -49,6 +55,31 @@ class WC_Payments_Dev_Tools {
 	public static function admin_page() {
 		self::maybe_handle_settings_save();
 		self::admin_page_output();
+	}
+
+	/**
+	 * Adds a placeholder page for when dependencies could not be loaded
+	 */
+	public static function add_disabled_page() {
+		add_menu_page(
+			'WcPay Dev',
+			'WcPay Dev',
+			'manage_options',
+			self::ID,
+			[ __CLASS__, 'disabled_page' ],
+			'dashicons-warning'
+		);
+	}
+
+	/**
+	 * Outputs the disabled page.
+	 */
+	public static function disabled_page() {
+		?>
+		<h1>WcPay Dev Utils (disabled)</h1>
+		<p>Dev utils have been disabled due to missing dependencies.</p>
+		<p>Make sure that the WcPay plugin and all its dependencies are installed and active, Jetpack is connected, and then try again.</p>
+		<?php
 	}
 
 	/**
@@ -286,4 +317,4 @@ function wcpay_dev_tools_init() {
 	WC_Payments_Dev_Tools::init();
 }
 
-add_action( 'plugins_loaded', 'wcpay_dev_tools_init' );
+add_action( 'plugins_loaded', 'wcpay_dev_tools_init', 999 );
