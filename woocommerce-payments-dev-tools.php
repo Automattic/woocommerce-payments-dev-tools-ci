@@ -40,8 +40,8 @@ class WC_Payments_Dev_Tools {
 	 */
 	public static function add_admin_page() {
 		add_menu_page(
-			'WcPay Dev',
-			'WcPay Dev',
+			'WCPay Dev',
+			'WCPay Dev',
 			'manage_options',
 			self::ID,
 			[ __CLASS__, 'admin_page' ],
@@ -62,8 +62,8 @@ class WC_Payments_Dev_Tools {
 	 */
 	public static function add_disabled_page() {
 		add_menu_page(
-			'WcPay Dev',
-			'WcPay Dev',
+			'WCPay Dev',
+			'WCPay Dev',
 			'manage_options',
 			self::ID,
 			[ __CLASS__, 'disabled_page' ],
@@ -76,9 +76,9 @@ class WC_Payments_Dev_Tools {
 	 */
 	public static function disabled_page() {
 		?>
-		<h1>WcPay Dev Utils (disabled)</h1>
+		<h1>WCPay Dev Utils (disabled)</h1>
 		<p>Dev utils have been disabled due to missing dependencies.</p>
-		<p>Make sure that the WcPay plugin and all its dependencies are installed and active, Jetpack is connected, and then try again.</p>
+		<p>Make sure that the WCPay plugin and all its dependencies are installed and active, Jetpack is connected, and then try again.</p>
 		<?php
 	}
 
@@ -90,7 +90,7 @@ class WC_Payments_Dev_Tools {
 	}
 
 	/**
-	 * Detects outgoing WcPay API requests and redirects them based on this plugin's settings
+	 * Detects outgoing WCPay API requests and redirects them based on this plugin's settings
 	 * @param mixed $preempt
 	 * @param array $args
 	 * @param string $url
@@ -127,7 +127,7 @@ class WC_Payments_Dev_Tools {
 	}
 
 	/**
-	 * Adds xdebug cookie to the WcPay API requests
+	 * Adds xdebug cookie to the WCPay API requests
 	 * @param array $headers
 	 */
 	public static function add_wcpay_request_headers( $headers ) {
@@ -214,13 +214,13 @@ class WC_Payments_Dev_Tools {
 	 */
 	private static function admin_page_output() {
 		?>
-		<h1>WcPay Dev Utils</h1>
+		<h1>WCPay Dev Utils</h1>
 		<form action="<?php echo( self::get_settings_url() ) ?>" method="post">
 			<?php
 			wp_nonce_field( 'wcpaydev-save-settings', 'wcpaydev-save-settings' );
 			self::render_checkbox( self::DEV_MODE_OPTION, 'Dev mode enabled', true );
 			self::render_checkbox( self::FORCE_ONBOARDING_OPTION, 'Force onboarding' );
-			self::render_checkbox( self::FORCE_DISCONNECTED_OPTION, 'Force the plugin to act as disconnected from WcPay' );
+			self::render_checkbox( self::FORCE_DISCONNECTED_OPTION, 'Force the plugin to act as disconnected from WCPay' );
 			self::render_checkbox( self::REDIRECT_OPTION, 'Enable API request redirection' );
 			?>
 			<p>
@@ -261,7 +261,7 @@ class WC_Payments_Dev_Tools {
 
 		$enabled_options = [];
 
-		$notice = '<strong>WcPay dev tools enabled: </strong>';
+		$notice = '<strong>WCPay dev tools enabled: </strong>';
 		if ( get_option( self::DEV_MODE_OPTION, true ) ) {
 			$enabled_options[] = 'Dev mode enabled';
 		}
