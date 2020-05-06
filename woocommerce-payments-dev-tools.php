@@ -311,6 +311,59 @@ class WC_Payments_Dev_Tools {
 	private static function clear_account_cache() {
 		delete_transient( WC_Payments_Account::ACCOUNT_TRANSIENT );
 	}
+
+	/**
+	 * Authenticates requests from Jetpack server to WP REST API endpoints. However, we don't enforce that the signature
+	 * is valid so that we can accept connections from our local development server (which doesn't have any details
+	 * about this site's Jetpack connection).
+	 *
+	 * @param $user
+	 *
+	 * @return mixed|null
+	 */
+	public static function mock_rest_authenticate( $user ) {
+		if ( ! empty( $user ) ) {
+			// Another authentication method is in effect.
+			return $user;
+		}
+
+		if ( ! isset( $_GET['_for'] ) || $_GET['_for'] !== 'mock_jetpack' ) {
+			// Nothing to do for this authentication method.
+			return null;
+		}
+
+		// Making an assumption here that user 1 owns the Jetpack connection.
+		$verified = array(
+			'type'    => 'user',
+			'user_id' => 1,
+		);
+
+		if (
+			$verified &&
+			isset( $verified['type'] ) &&
+			'user' === $verified['type'] &&
+			! empty( $verified['user_id'] )
+		) {
+			return $verified['user_id'];
+		}
+
+		return null;
+	}
+
+	/**
+	 * Returns any authentication errors associated with mock_rest_authenticate (we don't create any, but this check
+	 * is required for the authentication to pass).
+	 *
+	 * @param $value
+	 *
+	 * @return bool
+	 */
+	public static function mock_rest_authentication_errors( $value ) {
+		if ( $value !== null ) {
+			return $value;
+		}
+		return true;
+	}
 }
 
 function wcpay_dev_tools_init() {
@@ -318,3 +371,7 @@ function wcpay_dev_tools_init() {
 }
 
 add_action( 'plugins_loaded', 'wcpay_dev_tools_init', 999 );
+
+// Register these filters here since user authentication happens before our init function gets a chance to run.
+add_filter( 'determine_current_user', [ WC_Payments_Dev_Tools::class, 'mock_rest_authenticate' ], 999 );
+add_filter( 'rest_authentication_errors', [ WC_Payments_Dev_Tools::class, 'mock_rest_authentication_errors' ], 999 );
