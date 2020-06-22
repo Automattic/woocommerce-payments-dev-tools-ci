@@ -246,6 +246,9 @@ class WC_Payments_Dev_Tools {
 			</form>
 		</p>
 		<p>
+			<h2>WP.com blog ID: <?php echo( self::get_blog_id() ); ?></h2>
+		</p>
+		<p>
 			<h2>Account cache contents <a href="<?php echo wp_nonce_url( add_query_arg( [ 'wcpaydev-clear-cache' => '1' ], self::get_settings_url() ), 'wcpaydev-clear-cache' ); ?>">(clear)</a>:</h2>
 			<textarea rows="15" cols="100"><?php echo esc_html( var_export( get_transient( WC_Payments_Account::ACCOUNT_TRANSIENT ), true ) ) ?></textarea>
 		</p>
@@ -400,6 +403,19 @@ class WC_Payments_Dev_Tools {
 		}
 
 		return admin_url( 'admin.php?page=wc-status&tab=logs&log_file=' . $latest_log_key );
+	}
+
+	/**
+	 * Gets a .com blog_id associated with the site, if possible
+	 *
+	 * @return int
+	 */
+	private static function get_blog_id() {
+		if ( ! class_exists( 'Jetpack_Options' ) ) {
+			return 'could not retrieve';
+		}
+
+		return Jetpack_Options::get_option( 'id' );
 	}
 }
 
