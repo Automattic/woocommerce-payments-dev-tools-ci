@@ -215,38 +215,49 @@ class WC_Payments_Dev_Tools {
 	private static function admin_page_output() {
 		?>
 		<h1>WCPay Dev Utils</h1>
-		<form action="<?php echo( self::get_settings_url() ) ?>" method="post">
-			<?php
-			wp_nonce_field( 'wcpaydev-save-settings', 'wcpaydev-save-settings' );
-			self::render_checkbox( self::DEV_MODE_OPTION, 'Dev mode enabled', true );
-			self::render_checkbox( self::FORCE_ONBOARDING_OPTION, 'Force onboarding' );
-			self::render_checkbox( self::FORCE_DISCONNECTED_OPTION, 'Force the plugin to act as disconnected from WCPay' );
-			self::render_checkbox( self::REDIRECT_OPTION, 'Enable API request redirection' );
-			?>
-			<p>
-				<label for="wcpaydev-redirect-to">
-					Redirect API requests to:
-				</label>
-				<input
-					type="text"
-					id="<?php echo( self::REDIRECT_TO_OPTION ); ?>"
-					name="<?php echo( self::REDIRECT_TO_OPTION ); ?>"
-					size="50"
-					value="<?php echo( self::get_redirect_to() );?>"
-				/>
-			</p>
-			<?php
-			self::render_checkbox( self::DISPLAY_NOTICE, 'Display notice about dev settings', true );
-			?>
-			<p>
-				<input type="submit" value="Submit" />
-			</p>
-		</form>
 		<p>
-			<a href="<?php echo wp_nonce_url( add_query_arg( [ 'wcpaydev-clear-cache' => '1' ], self::get_settings_url() ), 'wcpaydev-clear-cache' ); ?>">Clear Account cache</a>
+			<h2>Util settings:</h2>
+			<form action="<?php echo( self::get_settings_url() ) ?>" method="post">
+				<?php
+				wp_nonce_field( 'wcpaydev-save-settings', 'wcpaydev-save-settings' );
+				self::render_checkbox( self::DEV_MODE_OPTION, 'Dev mode enabled', true );
+				self::render_checkbox( self::FORCE_ONBOARDING_OPTION, 'Force onboarding' );
+				self::render_checkbox( self::FORCE_DISCONNECTED_OPTION, 'Force the plugin to act as disconnected from WCPay' );
+				self::render_checkbox( self::REDIRECT_OPTION, 'Enable API request redirection' );
+				?>
+				<p>
+					<label for="wcpaydev-redirect-to">
+						Redirect API requests to:
+					</label>
+					<input
+						type="text"
+						id="<?php echo( self::REDIRECT_TO_OPTION ); ?>"
+						name="<?php echo( self::REDIRECT_TO_OPTION ); ?>"
+						size="50"
+						value="<?php echo( self::get_redirect_to() );?>"
+					/>
+				</p>
+				<?php
+				self::render_checkbox( self::DISPLAY_NOTICE, 'Display notice about dev settings', true );
+				?>
+				<p>
+					<input type="submit" value="Submit" />
+				</p>
+			</form>
 		</p>
 		<p>
-			<a href="<?php echo wp_nonce_url( add_query_arg( [ 'wcpay-connect' => '1' ], WC_Payment_Gateway_WCPay::get_settings_url() ), 'wcpay-connect' ) ?>">Reonboard</a>
+			<h2>Account cache contents <a href="<?php echo wp_nonce_url( add_query_arg( [ 'wcpaydev-clear-cache' => '1' ], self::get_settings_url() ), 'wcpaydev-clear-cache' ); ?>">(clear)</a>:</h2>
+			<textarea rows="15" cols="100"><?php echo esc_html( var_export( get_transient( WC_Payments_Account::ACCOUNT_TRANSIENT ), true ) ) ?></textarea>
+		</p>
+		<p>
+			<h2>Gateway settings <a href="<?php echo WC_Payment_Gateway_WCPay::get_settings_url(); ?>">(edit)</a>:</h2>
+			<textarea rows="15" cols="100"><?php echo esc_html( var_export( get_option( 'woocommerce_woocommerce_payments_settings' ), true ) ) ?></textarea>
+		</p>
+		<p>
+			<h2><a href="<?php echo wp_nonce_url( add_query_arg( [ 'wcpay-connect' => '1' ], WC_Payment_Gateway_WCPay::get_settings_url() ), 'wcpay-connect' ) ?>">Reonboard</a></h2>
+		</p>
+		<p>
+			<h2><a href="<?php echo self::get_log_url(); ?>">Latest logs</a></h2>
 		</p>
 		<?php
 	}
@@ -363,6 +374,32 @@ class WC_Payments_Dev_Tools {
 			return $value;
 		}
 		return true;
+	}
+
+	/**
+	 * Returns a url to the latest WCPay log file
+	 *
+	 * @return string
+	 */
+	private static function get_log_url() {
+		$logs             = WC_Admin_Status::scan_log_files();
+		$latest_file_date = 0;
+		$latest_log_key   = '';
+
+		foreach ( $logs as $log_key => $log_file ) {
+			if ( ! preg_match( '/^woocommerce-payments-.*$/', $log_key ) ) {
+				continue;
+			}
+			$log_file_path = WC_LOG_DIR . $log_file;
+			$file_date     = filemtime( $log_file_path );
+
+			if ( $latest_file_date < $file_date ) {
+				$latest_file_date = $file_date;
+				$latest_log_key   = $log_key;
+			}
+		}
+
+		return admin_url( 'admin.php?page=wc-status&tab=logs&log_file=' . $latest_log_key );
 	}
 }
 
