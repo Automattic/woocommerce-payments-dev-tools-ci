@@ -8,13 +8,13 @@
  */
 
 class WC_Payments_Dev_Tools {
-	private const ID = 'wcpaydev';
-	private const DEV_MODE_OPTION = 'wcpaydev_dev_mode';
-	private const FORCE_DISCONNECTED_OPTION = 'wcpaydev_force_disconnected';
-	private const FORCE_ONBOARDING_OPTION = 'wcpaydev_force_onboarding';
-	private const REDIRECT_OPTION = 'wcpaydev_redirect';
-	private const REDIRECT_TO_OPTION = 'wcpaydev_redirect_to';
-	private const DISPLAY_NOTICE = 'wcpaydev_display_notice';
+	public const ID = 'wcpaydev';
+	public const DEV_MODE_OPTION = 'wcpaydev_dev_mode';
+	public const FORCE_DISCONNECTED_OPTION = 'wcpaydev_force_disconnected';
+	public const FORCE_ONBOARDING_OPTION = 'wcpaydev_force_onboarding';
+	public const REDIRECT_OPTION = 'wcpaydev_redirect';
+	public const REDIRECT_TO_OPTION = 'wcpaydev_redirect_to';
+	public const DISPLAY_NOTICE = 'wcpaydev_display_notice';
 
 	/**
 	 * Entry point of the plugin
@@ -421,6 +421,11 @@ class WC_Payments_Dev_Tools {
 
 function wcpay_dev_tools_init() {
 	WC_Payments_Dev_Tools::init();
+
+	// load the CLI source if required
+	if ( defined( 'WP_CLI' ) && WP_CLI ) {
+		include_once dirname( __FILE__ ) . '/cli-commands.php';
+	}
 }
 
 add_action( 'plugins_loaded', 'wcpay_dev_tools_init', 999 );
