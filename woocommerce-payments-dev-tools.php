@@ -158,6 +158,14 @@ class WC_Payments_Dev_Tools {
 			wp_safe_redirect( self::get_settings_url() );
 		}
 
+		if ( isset( $_GET['wcpaydev-clear-notes'] ) ) {
+			check_admin_referer( 'wcpaydev-clear-notes' );
+
+			WC_Payments::remove_woo_admin_notes();
+
+			wp_safe_redirect( self::get_settings_url() );
+		}
+
 		if ( isset( $_POST['wcpaydev-save-settings'] ) ) {
 			check_admin_referer( 'wcpaydev-save-settings', 'wcpaydev-save-settings' );
 
@@ -255,6 +263,9 @@ class WC_Payments_Dev_Tools {
 		<p>
 			<h2>Gateway settings <a href="<?php echo WC_Payment_Gateway_WCPay::get_settings_url(); ?>">(edit)</a>:</h2>
 			<textarea rows="15" cols="100"><?php echo esc_html( var_export( get_option( 'woocommerce_woocommerce_payments_settings' ), true ) ) ?></textarea>
+		</p>
+		<p>
+			<h2><a href="<?php echo wp_nonce_url( add_query_arg( [ 'wcpaydev-clear-notes' => '1' ], self::get_settings_url() ), 'wcpaydev-clear-notes' ); ?>">Delete all WCPay inbox notes</a></h2>
 		</p>
 		<p>
 			<h2><a href="<?php echo wp_nonce_url( add_query_arg( [ 'wcpay-connect' => '1' ], WC_Payment_Gateway_WCPay::get_settings_url() ), 'wcpay-connect' ) ?>">Reonboard</a></h2>
