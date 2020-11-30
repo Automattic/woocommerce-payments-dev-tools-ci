@@ -14,6 +14,8 @@ class WC_Payments_Dev_Tools {
 	public const FORCE_ONBOARDING_OPTION = 'wcpaydev_force_onboarding';
 	public const REDIRECT_OPTION = 'wcpaydev_redirect';
 	public const REDIRECT_TO_OPTION = 'wcpaydev_redirect_to';
+	public const PROXY_OPTION = 'wcpaydev_proxy';
+	public const PROXY_VIA_OPTION = 'wcpaydev_proxy_via';
 	public const DISPLAY_NOTICE = 'wcpaydev_display_notice';
 
 	/**
@@ -24,6 +26,8 @@ class WC_Payments_Dev_Tools {
 			add_action( 'admin_menu', [ __CLASS__, 'add_disabled_page' ] );
 			return;
 		}
+
+		self::maybe_set_proxy();
 
 		add_action( 'admin_menu', [ __CLASS__, 'add_admin_page' ] );
 		add_action( 'admin_notices', [ __CLASS__, 'add_notices' ] );
@@ -114,6 +118,28 @@ class WC_Payments_Dev_Tools {
 	}
 
 	/**
+	 * If enabled, sets *only* the *.wordpress.com requests to be sent via the a8c proxy.
+	 *
+	 * @return void
+	 */
+	public static function maybe_set_proxy() {
+		if ( ! get_option( self::PROXY_OPTION, true ) ) {
+			return;
+		}
+
+		$proxy = untrailingslashit( get_option( self::PROXY_VIA_OPTION ) );
+		if ( false === preg_match( '/(.+):(\d+)/', $proxy, $matches ) ) {
+			return;
+		}
+
+		define( 'WP_PROXY_HOST', $matches[1] );
+		define( 'WP_PROXY_PORT', $matches[2] );
+		add_filter( 'pre_http_send_through_proxy', function( $_, $uri, $check, $home ) {
+			return 1 === preg_match( '/.+wordpress.com/', $check['host'] );
+		}, 10, 4 );
+	}
+
+	/**
 	 * Adds force_on_boarding param to the onboarding request
 	 * @param array $args
 	 */
@@ -175,6 +201,10 @@ class WC_Payments_Dev_Tools {
 			self::update_option_from_checkbox( self::REDIRECT_OPTION );
 			if ( isset( $_POST[ self::REDIRECT_TO_OPTION ] ) ) {
 				update_option( self::REDIRECT_TO_OPTION, $_POST[ self::REDIRECT_TO_OPTION ] );
+			}
+			self::update_option_from_checkbox( self::PROXY_OPTION );
+			if ( isset( $_POST[ self::PROXY_OPTION ] ) ) {
+				update_option( self::PROXY_VIA_OPTION, $_POST[ self::PROXY_VIA_OPTION ] );
 			}
 			self::update_option_from_checkbox( self::DISPLAY_NOTICE );
 
@@ -246,6 +276,21 @@ class WC_Payments_Dev_Tools {
 					/>
 				</p>
 				<?php
+				self::render_checkbox( self::PROXY_OPTION, 'Proxy WPCOM requests', true );
+				?>
+				<p>
+					<label for="wcpaydev-redirect-to">
+						Proxy WPCOM requests through:
+					</label>
+					<input
+						type="text"
+						id="<?php echo( self::PROXY_VIA_OPTION ); ?>"
+						name="<?php echo( self::PROXY_VIA_OPTION ); ?>"
+						size="50"
+						value="<?php echo( self::get_proxy_via() );?>"
+					/>
+				</p>
+				<?php
 				self::render_checkbox( self::DISPLAY_NOTICE, 'Display notice about dev settings', true );
 				?>
 				<p>
@@ -303,6 +348,10 @@ class WC_Payments_Dev_Tools {
 			$enabled_options[] = 'Plugin forced to act as disconnected';
 		}
 
+		if ( get_option( self::PROXY_OPTION, true ) ) {
+			$enabled_options[] = 'Proxying WPCOM requests throug ' . self::get_proxy_via();
+		}
+
 		if ( empty( $enabled_options ) ) {
 			return;
 		}
@@ -319,6 +368,15 @@ class WC_Payments_Dev_Tools {
 	 */
 	private static function get_redirect_to() {
 		return get_option( self::REDIRECT_TO_OPTION, 'http://host.docker.internal:8086/wp-json/' );
+	}
+
+	/**
+	 * Gets the proxy url
+	 *
+	 * @return string
+	 */
+	private static function get_proxy_via() {
+		return get_option( self::PROXY_VIA_OPTION, 'socks5://host.docker.internal:8080' );
 	}
 
 	/**
