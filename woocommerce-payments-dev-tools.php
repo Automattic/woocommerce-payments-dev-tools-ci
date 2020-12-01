@@ -127,15 +127,15 @@ class WC_Payments_Dev_Tools {
 			return;
 		}
 
-		$proxy = untrailingslashit( get_option( self::PROXY_VIA_OPTION ) );
-		if ( false === preg_match( '/(.+):(\d+)/', $proxy, $matches ) ) {
+		$proxy = untrailingslashit( self::get_proxy_via() );
+		if ( 1 !== preg_match( '/(.+):(\d+)/', $proxy, $matches ) ) {
 			return;
 		}
 
 		define( 'WP_PROXY_HOST', $matches[1] );
 		define( 'WP_PROXY_PORT', $matches[2] );
 		add_filter( 'pre_http_send_through_proxy', function( $_, $uri, $check, $home ) {
-			return 1 === preg_match( '/.+wordpress.com/', $check['host'] );
+			return 1 === preg_match( '/.*wordpress.com/', $check['host'] );
 		}, 10, 4 );
 	}
 
