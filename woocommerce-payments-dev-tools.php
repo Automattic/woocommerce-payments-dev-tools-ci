@@ -105,7 +105,7 @@ class WC_Payments_Dev_Tools {
 		}
 
 		// detect the wcpay requests
-		if ( 1 !== preg_match( '/^https?:\/\/public-api\.wordpress\.com\/(.+?wcpay.+)/', $url, $matches ) ) {
+		if ( 1 !== preg_match( '/^https?:\/\/public-api\.wordpress\.com\/(.+?(?:wcpay|tumblrpay).+)/', $url, $matches ) ) {
 			return $preempt;
 		}
 
