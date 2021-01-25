@@ -220,7 +220,7 @@ class WC_Payments_Dev_Tools {
 	 * @param string $option_name
 	 */
 	private static function update_option_from_checkbox( $option_name ) {
-		$value = isset( $_POST[ $option_name ] ) && 'on' === $_POST[ $option_name ];
+		$value = isset( $_POST[ $option_name ] ) && 'on' === $_POST[ $option_name ] ? '1' : '0';
 		update_option( $option_name, $value );
 	}
 
