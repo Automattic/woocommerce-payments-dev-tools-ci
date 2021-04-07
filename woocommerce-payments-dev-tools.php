@@ -13,6 +13,7 @@ class WC_Payments_Dev_Tools {
 	public const FORCE_DISCONNECTED_OPTION = 'wcpaydev_force_disconnected';
 	public const FORCE_ONBOARDING_OPTION = 'wcpaydev_force_onboarding';
 	public const REDIRECT_OPTION = 'wcpaydev_redirect';
+	public const GROUPED_SETTINGS = '_wcpay_feature_grouped_settings';
 	public const REDIRECT_TO_OPTION = 'wcpaydev_redirect_to';
 	public const PROXY_OPTION = 'wcpaydev_proxy';
 	public const PROXY_VIA_OPTION = 'wcpaydev_proxy_via';
@@ -199,6 +200,7 @@ class WC_Payments_Dev_Tools {
 			self::update_option_from_checkbox( self::FORCE_ONBOARDING_OPTION );
 			self::update_option_from_checkbox( self::FORCE_DISCONNECTED_OPTION );
 			self::update_option_from_checkbox( self::REDIRECT_OPTION );
+			self::update_option_from_checkbox( self::GROUPED_SETTINGS );
 			if ( isset( $_POST[ self::REDIRECT_TO_OPTION ] ) ) {
 				update_option( self::REDIRECT_TO_OPTION, $_POST[ self::REDIRECT_TO_OPTION ] );
 			}
@@ -262,6 +264,7 @@ class WC_Payments_Dev_Tools {
 				self::render_checkbox( self::FORCE_ONBOARDING_OPTION, 'Force onboarding' );
 				self::render_checkbox( self::FORCE_DISCONNECTED_OPTION, 'Force the plugin to act as disconnected from WCPay' );
 				self::render_checkbox( self::REDIRECT_OPTION, 'Enable API request redirection' );
+				self::render_checkbox( self::GROUPED_SETTINGS, 'Enable grouped settings' );
 				?>
 				<p>
 					<label for="wcpaydev-redirect-to">
@@ -338,6 +341,10 @@ class WC_Payments_Dev_Tools {
 
 		if ( get_option( self::REDIRECT_OPTION, false ) ) {
 			$enabled_options[] = 'Redirecting API requests to ' . self::get_redirect_to();
+		}
+
+		if ( get_option( self::GROUPED_SETTINGS, false ) ) {
+			$enabled_options[] = 'Grouped settings enabled';
 		}
 
 		if ( get_option( self::FORCE_ONBOARDING_OPTION, false ) ) {
