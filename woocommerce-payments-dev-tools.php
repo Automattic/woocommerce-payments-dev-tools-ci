@@ -170,7 +170,13 @@ class WC_Payments_Dev_Tools {
 			return;
 		}
 
-		set_transient( WC_Payments_Account::ACCOUNT_TRANSIENT, array() );
+		update_option(
+		        WC_Payments_Account::ACCOUNT_OPTION,
+                [
+                    'account' => [],
+                    'expires' => time() + YEAR_IN_SECONDS,
+                ]
+        );
 	}
 
 	/**
@@ -306,7 +312,7 @@ class WC_Payments_Dev_Tools {
 		</p>
 		<p>
 			<h2>Account cache contents <a href="<?php echo wp_nonce_url( add_query_arg( [ 'wcpaydev-clear-cache' => '1' ], self::get_settings_url() ), 'wcpaydev-clear-cache' ); ?>">(clear)</a>:</h2>
-			<textarea rows="15" cols="100"><?php echo esc_html( var_export( get_transient( WC_Payments_Account::ACCOUNT_TRANSIENT ), true ) ) ?></textarea>
+			<textarea rows="15" cols="100"><?php echo esc_html( var_export( get_option( WC_Payments_Account::ACCOUNT_OPTION ), true ) ) ?></textarea>
 		</p>
 		<p>
 			<h2>Gateway settings <a href="<?php echo WC_Payment_Gateway_WCPay::get_settings_url(); ?>">(edit)</a>:</h2>
@@ -399,7 +405,7 @@ class WC_Payments_Dev_Tools {
 	 * Clears the wcpay account cache
 	 */
 	private static function clear_account_cache() {
-		delete_transient( WC_Payments_Account::ACCOUNT_TRANSIENT );
+		delete_option( WC_Payments_Account::ACCOUNT_OPTION );
 	}
 
 	/**
