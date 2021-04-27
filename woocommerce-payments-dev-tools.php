@@ -205,8 +205,8 @@ class WC_Payments_Dev_Tools {
 			self::update_option_from_checkbox( self::DEV_MODE_OPTION );
 			self::update_option_from_checkbox( self::FORCE_ONBOARDING_OPTION );
 			self::update_option_from_checkbox( self::FORCE_DISCONNECTED_OPTION );
-			self::update_option_from_checkbox( self::REDIRECT_OPTION );
 			self::update_option_from_checkbox( self::GROUPED_SETTINGS );
+			self::update_option_from_checkbox( self::REDIRECT_OPTION );
 			if ( isset( $_POST[ self::REDIRECT_TO_OPTION ] ) ) {
 				update_option( self::REDIRECT_TO_OPTION, $_POST[ self::REDIRECT_TO_OPTION ] );
 			}
@@ -269,8 +269,8 @@ class WC_Payments_Dev_Tools {
 				self::render_checkbox( self::DEV_MODE_OPTION, 'Dev mode enabled', true );
 				self::render_checkbox( self::FORCE_ONBOARDING_OPTION, 'Force onboarding' );
 				self::render_checkbox( self::FORCE_DISCONNECTED_OPTION, 'Force the plugin to act as disconnected from WCPay' );
-				self::render_checkbox( self::REDIRECT_OPTION, 'Enable API request redirection' );
 				self::render_checkbox( self::GROUPED_SETTINGS, 'Enable grouped settings' );
+				self::render_checkbox( self::REDIRECT_OPTION, 'Enable API request redirection' );
 				?>
 				<p>
 					<label for="wcpaydev-redirect-to">
