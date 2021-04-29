@@ -362,7 +362,7 @@ class WC_Payments_Dev_Tools {
 		}
 
 		if ( get_option( self::PROXY_OPTION, true ) ) {
-			$enabled_options[] = 'Proxying WPCOM requests throug ' . self::get_proxy_via();
+			$enabled_options[] = 'Proxying WPCOM requests through ' . self::get_proxy_via();
 		}
 
 		if ( empty( $enabled_options ) ) {
