@@ -14,6 +14,7 @@ class WC_Payments_Dev_Tools {
 	public const FORCE_ONBOARDING_OPTION = 'wcpaydev_force_onboarding';
 	public const REDIRECT_OPTION = 'wcpaydev_redirect';
 	public const GROUPED_SETTINGS = '_wcpay_feature_grouped_settings';
+	public const UPE_ADDITIONAL_PAYMENT_METHODS = '_wcpay_feature_upe_additional_payment_methods';
 	public const REDIRECT_TO_OPTION = 'wcpaydev_redirect_to';
 	public const PROXY_OPTION = 'wcpaydev_proxy';
 	public const PROXY_VIA_OPTION = 'wcpaydev_proxy_via';
@@ -34,6 +35,7 @@ class WC_Payments_Dev_Tools {
 		add_action( 'admin_notices', [ __CLASS__, 'add_notices' ] );
 
 		add_filter( 'wcpay_dev_mode', [ __CLASS__, 'maybe_enable_dev_mode' ], 10, 1 );
+		add_filter( 'wcpay_upe_available_payment_methods', [ __CLASS__, 'maybe_add_upe_payment_methods' ], 10, 1 );
 		add_filter( 'pre_http_request', [ __CLASS__, 'maybe_redirect_api_request' ], 10, 3 );
 		add_filter( 'wc_payments_get_oauth_data_args', [ __CLASS__, 'maybe_force_on_boarding' ], 10, 1 );
 		add_filter( 'wcpay_api_request_headers', [ __CLASS__, 'add_wcpay_request_headers' ], 10, 1 );
@@ -85,6 +87,21 @@ class WC_Payments_Dev_Tools {
 		<p>Dev utils have been disabled due to missing dependencies.</p>
 		<p>Make sure that the WCPay plugin and all its dependencies are installed and active, Jetpack is connected, and then try again.</p>
 		<?php
+	}
+
+	/**
+	 * Adds UPE payment methods for development mode.
+	 */
+	public static function maybe_add_upe_payment_methods( $methods ) {
+		if ( ! get_option( self::UPE_ADDITIONAL_PAYMENT_METHODS, false ) ) {
+			return $methods;
+		}
+
+		$methods[] = 'woocommerce_payments_giropay';
+		$methods[] = 'woocommerce_payments_sepa';
+		$methods[] = 'woocommerce_payments_sofort';
+
+		return array_unique( $methods );
 	}
 
 	/**
@@ -206,6 +223,7 @@ class WC_Payments_Dev_Tools {
 			self::update_option_from_checkbox( self::FORCE_ONBOARDING_OPTION );
 			self::update_option_from_checkbox( self::FORCE_DISCONNECTED_OPTION );
 			self::update_option_from_checkbox( self::GROUPED_SETTINGS );
+			self::update_option_from_checkbox( self::UPE_ADDITIONAL_PAYMENT_METHODS );
 			self::update_option_from_checkbox( self::REDIRECT_OPTION );
 			if ( isset( $_POST[ self::REDIRECT_TO_OPTION ] ) ) {
 				update_option( self::REDIRECT_TO_OPTION, $_POST[ self::REDIRECT_TO_OPTION ] );
@@ -270,6 +288,7 @@ class WC_Payments_Dev_Tools {
 				self::render_checkbox( self::FORCE_ONBOARDING_OPTION, 'Force onboarding' );
 				self::render_checkbox( self::FORCE_DISCONNECTED_OPTION, 'Force the plugin to act as disconnected from WCPay' );
 				self::render_checkbox( self::GROUPED_SETTINGS, 'Enable grouped settings' );
+				self::render_checkbox( self::UPE_ADDITIONAL_PAYMENT_METHODS, 'Add UPE additional payment methods' );
 				self::render_checkbox( self::REDIRECT_OPTION, 'Enable API request redirection' );
 				?>
 				<p>
@@ -351,6 +370,10 @@ class WC_Payments_Dev_Tools {
 
 		if ( get_option( self::GROUPED_SETTINGS, false ) ) {
 			$enabled_options[] = 'Grouped settings enabled';
+		}
+
+		if ( get_option( self::UPE_ADDITIONAL_PAYMENT_METHODS, false ) ) {
+			$enabled_options[] = 'UPE additional payment methods enabled';
 		}
 
 		if ( get_option( self::FORCE_ONBOARDING_OPTION, false ) ) {
