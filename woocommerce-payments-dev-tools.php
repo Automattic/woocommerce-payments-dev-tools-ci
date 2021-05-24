@@ -15,6 +15,7 @@ class WC_Payments_Dev_Tools {
 	public const REDIRECT_OPTION = 'wcpaydev_redirect';
 	public const GROUPED_SETTINGS = '_wcpay_feature_grouped_settings';
 	public const UPE_ADDITIONAL_PAYMENT_METHODS = '_wcpay_feature_upe_additional_payment_methods';
+	public const CUSTOMER_MULTI_CURRENCY = '_wcpay_feature_customer_multi_currency';
 	public const REDIRECT_TO_OPTION = 'wcpaydev_redirect_to';
 	public const PROXY_OPTION = 'wcpaydev_proxy';
 	public const PROXY_VIA_OPTION = 'wcpaydev_proxy_via';
@@ -224,6 +225,7 @@ class WC_Payments_Dev_Tools {
 			self::update_option_from_checkbox( self::FORCE_DISCONNECTED_OPTION );
 			self::update_option_from_checkbox( self::GROUPED_SETTINGS );
 			self::update_option_from_checkbox( self::UPE_ADDITIONAL_PAYMENT_METHODS );
+			self::update_option_from_checkbox( self::CUSTOMER_MULTI_CURRENCY );
 			self::update_option_from_checkbox( self::REDIRECT_OPTION );
 			if ( isset( $_POST[ self::REDIRECT_TO_OPTION ] ) ) {
 				update_option( self::REDIRECT_TO_OPTION, $_POST[ self::REDIRECT_TO_OPTION ] );
@@ -289,6 +291,7 @@ class WC_Payments_Dev_Tools {
 				self::render_checkbox( self::FORCE_DISCONNECTED_OPTION, 'Force the plugin to act as disconnected from WCPay' );
 				self::render_checkbox( self::GROUPED_SETTINGS, 'Enable grouped settings' );
 				self::render_checkbox( self::UPE_ADDITIONAL_PAYMENT_METHODS, 'Add UPE additional payment methods' );
+				self::render_checkbox( self::CUSTOMER_MULTI_CURRENCY, 'Enable Customer multi-currency' );
 				self::render_checkbox( self::REDIRECT_OPTION, 'Enable API request redirection' );
 				?>
 				<p>
@@ -374,6 +377,10 @@ class WC_Payments_Dev_Tools {
 
 		if ( get_option( self::UPE_ADDITIONAL_PAYMENT_METHODS, false ) ) {
 			$enabled_options[] = 'UPE additional payment methods enabled';
+		}
+
+		if ( get_option( self::CUSTOMER_MULTI_CURRENCY, false ) ) {
+			$enabled_options[] = 'Customer multi-currency enabled';
 		}
 
 		if ( get_option( self::FORCE_ONBOARDING_OPTION, false ) ) {
