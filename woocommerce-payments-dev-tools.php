@@ -99,9 +99,9 @@ class WC_Payments_Dev_Tools {
 			return $methods;
 		}
 
-		$methods[] = 'woocommerce_payments_giropay';
-		$methods[] = 'woocommerce_payments_sepa';
-		$methods[] = 'woocommerce_payments_sofort';
+		$methods[] = 'giropay';
+		$methods[] = 'sepa_debit';
+		$methods[] = 'sofort';
 
 		return array_unique( $methods );
 	}
