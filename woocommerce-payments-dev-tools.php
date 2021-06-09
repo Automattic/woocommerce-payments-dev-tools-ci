@@ -21,16 +21,23 @@ class WC_Payments_Dev_Tools {
 	public const PROXY_OPTION = 'wcpaydev_proxy';
 	public const PROXY_VIA_OPTION = 'wcpaydev_proxy_via';
 	public const DISPLAY_NOTICE = 'wcpaydev_display_notice';
+	public const WCPAY_RELEASE_TAG = 'wcpaydev_wcpay_release_tag';
+
+
+	/**
+	 * Helpers for GitHub access
+	 */
+	public const WCPAY_PLUGIN_REPOSITORY         = 'Automattic/woocommerce-payments';
+	private const WCPAY_PLUGIN_SLUG              = 'woocommerce-payments';
+	private const WCPAY_PLUGIN_RE                = '/\/woocommerce-payments\./';
+	private const WCPAY_RELEASE_LIST_FILE        = 'wcpaydev-wcpay-releases.json';
+	private const WCPAY_RELEASE_CACHE_TTL_IN_SEC = 600;
+	private const WCPAY_ASSET_FILENAME           = 'woocommerce-payments.zip';
 
 	/**
 	 * Entry point of the plugin
 	 */
 	public static function init() {
-		if ( ! class_exists( 'WC_Payments_Account' ) ) {
-			add_action( 'admin_menu', [ __CLASS__, 'add_disabled_page' ] );
-			return;
-		}
-
 		self::maybe_set_proxy();
 
 		add_action( 'admin_menu', [ __CLASS__, 'add_admin_page' ] );
@@ -41,6 +48,7 @@ class WC_Payments_Dev_Tools {
 		add_filter( 'pre_http_request', [ __CLASS__, 'maybe_redirect_api_request' ], 10, 3 );
 		add_filter( 'wc_payments_get_oauth_data_args', [ __CLASS__, 'maybe_force_on_boarding' ], 10, 1 );
 		add_filter( 'wcpay_api_request_headers', [ __CLASS__, 'add_wcpay_request_headers' ], 10, 1 );
+		add_filter( 'upgrader_pre_download', [ __CLASS__, 'maybe_override_wcpay_version' ], 10, 4 );
 		add_action( 'init', [ __CLASS__, 'maybe_force_disconnected' ] );
 	}
 
@@ -81,12 +89,12 @@ class WC_Payments_Dev_Tools {
 	}
 
 	/**
-	 * Outputs the disabled page.
+	 * Outputs for disabled settings.
 	 */
-	public static function disabled_page() {
+	public static function disabled_settings() {
 		?>
-		<h1>WCPay Dev Utils (disabled)</h1>
-		<p>Dev utils have been disabled due to missing dependencies.</p>
+		<h2>Disabled settings</h2>
+		<p>Some settings have been disabled due to missing dependencies.</p>
 		<p>Make sure that the WCPay plugin and all its dependencies are installed and active, Jetpack is connected, and then try again.</p>
 		<?php
 	}
@@ -199,6 +207,44 @@ class WC_Payments_Dev_Tools {
 	}
 
 	/**
+	 * Overrides plugin api to inject a download link to a specified WCPay
+	 * release
+	 */
+	public static function maybe_override_wcpay_version( $result, $package, $upgrader, $hook_extra ) {
+		if (
+			preg_match( self::WCPAY_PLUGIN_RE, $package )
+			&& preg_match( '!^(http|https|ftp)://!i', $package )
+			&& self::get_wcpay_release_tag()
+		) {
+			$wcpay_release_tag = self::get_wcpay_release_tag();
+			foreach ( self::get_github_releases() as $wcpay_release ) {
+				if ( $wcpay_release['tag_name'] === $wcpay_release_tag ) {
+					// First get a final GitHub redirect URL.
+					$headers      = get_headers( $wcpay_release['download_url'], 1 );
+					$download_url = $headers['Location'];
+
+					$upgrader->skin->feedback( 'downloading_package', $download_url );
+					$download_file = download_url( $download_url, 300, false );
+					if ( is_wp_error( $download_file ) && ! $download_file->get_error_data( 'softfail-filename' ) ) {
+						return new WP_Error( 'download_failed', $upgrader->strings['download_failed'], $download_file->get_error_message() );
+					}
+					return $download_file;
+				}
+			}
+			// We have an old tag name in the options and cannot find it in the cache.
+			return new WP_Error(
+				'download_failed',
+				$upgrader->strings['download_failed'],
+				sprintf(
+					'Release with tag "%s" cannot be found in the cache. Please visit WCPay Dev and choose a more recent release tag for override.',
+					$wcpay_release_tag
+				)
+			);
+		}
+		return $result;
+	}
+
+	/**
 	 * Processes form submission on the settings page
 	 */
 	private static function maybe_handle_settings_save() {
@@ -237,6 +283,7 @@ class WC_Payments_Dev_Tools {
 				update_option( self::PROXY_VIA_OPTION, $_POST[ self::PROXY_VIA_OPTION ] );
 			}
 			self::update_option_from_checkbox( self::DISPLAY_NOTICE );
+			update_option( self::WCPAY_RELEASE_TAG, $_POST[ self::WCPAY_RELEASE_TAG ] ?? '' );
 
 			self::clear_account_cache();
 
@@ -281,6 +328,8 @@ class WC_Payments_Dev_Tools {
 	 * Outputs the markup for the admin page
 	 */
 	private static function admin_page_output() {
+
+		$wcpay_release_tag = self::get_wcpay_release_tag();
 		?>
 		<h1>WCPay Dev Utils</h1>
 		<p>
@@ -328,6 +377,23 @@ class WC_Payments_Dev_Tools {
 				self::render_checkbox( self::DISPLAY_NOTICE, 'Display notice about dev settings', true );
 				?>
 				<p>
+					<label for="<?php echo( self::WCPAY_RELEASE_TAG ); ?>">
+						Use specified plugin version during install:
+					</label>
+					<select
+						id="<?php echo( self::WCPAY_RELEASE_TAG ); ?>"
+						name="<?php echo( self::WCPAY_RELEASE_TAG ); ?>"
+					>
+						<option value="">Latest stable version</option>
+					<?php foreach ( self::get_github_releases() as $wcpay_release ) : ?>
+						<option value="<?php echo $wcpay_release['tag_name']; ?>"
+							<?php if ( $wcpay_release_tag === $wcpay_release['tag_name'] ) { echo "selected"; } ?>>
+							<?php echo $wcpay_release['tag_name']; ?>
+						</option>
+					<?php endforeach; ?>
+					</select>
+				</p>
+				<p>
 					<input type="submit" value="Submit" />
 				</p>
 			</form>
@@ -335,24 +401,29 @@ class WC_Payments_Dev_Tools {
 		<p>
 			<h2>WP.com blog ID: <?php echo( self::get_blog_id() ); ?></h2>
 		</p>
-		<p>
-			<h2>Account cache contents <a href="<?php echo wp_nonce_url( add_query_arg( [ 'wcpaydev-clear-cache' => '1' ], self::get_settings_url() ), 'wcpaydev-clear-cache' ); ?>">(clear)</a>:</h2>
-			<textarea rows="15" cols="100"><?php echo esc_html( var_export( get_option( WC_Payments_Account::ACCOUNT_OPTION ), true ) ) ?></textarea>
-		</p>
-		<p>
-			<h2>Gateway settings <a href="<?php echo WC_Payment_Gateway_WCPay::get_settings_url(); ?>">(edit)</a>:</h2>
-			<textarea rows="15" cols="100"><?php echo esc_html( var_export( get_option( 'woocommerce_woocommerce_payments_settings' ), true ) ) ?></textarea>
-		</p>
-		<p>
-			<h2><a href="<?php echo wp_nonce_url( add_query_arg( [ 'wcpaydev-clear-notes' => '1' ], self::get_settings_url() ), 'wcpaydev-clear-notes' ); ?>">Delete all WCPay inbox notes</a></h2>
-		</p>
-		<p>
-			<h2><a href="<?php echo wp_nonce_url( add_query_arg( [ 'wcpay-connect' => '1' ], WC_Payment_Gateway_WCPay::get_settings_url() ), 'wcpay-connect' ) ?>">Reonboard</a></h2>
-		</p>
-		<p>
-			<h2><a href="<?php echo self::get_log_url(); ?>">Latest logs</a></h2>
-		</p>
 		<?php
+			if ( class_exists( 'WC_Payments_Account' ) ): ?>
+			<p>
+				<h2>Account cache contents <a href="<?php echo wp_nonce_url( add_query_arg( [ 'wcpaydev-clear-cache' => '1' ], self::get_settings_url() ), 'wcpaydev-clear-cache' ); ?>">(clear)</a>:</h2>
+				<textarea rows="15" cols="100"><?php echo esc_html( var_export( get_option( WC_Payments_Account::ACCOUNT_OPTION ), true ) ) ?></textarea>
+			</p>
+			<p>
+					<h2>Gateway settings <a href="<?php echo WC_Payment_Gateway_WCPay::get_settings_url(); ?>">(edit)</a>:</h2>
+					<textarea rows="15" cols="100"><?php echo esc_html( var_export( get_option( 'woocommerce_woocommerce_payments_settings' ), true ) ) ?></textarea>
+			</p>
+			<p>
+				<h2><a href="<?php echo wp_nonce_url( add_query_arg( [ 'wcpaydev-clear-notes' => '1' ], self::get_settings_url() ), 'wcpaydev-clear-notes' ); ?>">Delete all WCPay inbox notes</a></h2>
+			</p>
+			<p>
+				<h2><a href="<?php echo wp_nonce_url( add_query_arg( [ 'wcpay-connect' => '1' ], WC_Payment_Gateway_WCPay::get_settings_url() ), 'wcpay-connect' ) ?>">Reonboard</a></h2>
+			</p>
+			<p>
+				<h2><a href="<?php echo self::get_log_url(); ?>">Latest logs</a></h2>
+			</p>
+		<?php
+		else:
+			self::disabled_settings();
+		endif;
 	}
 
 	/**
@@ -402,6 +473,10 @@ class WC_Payments_Dev_Tools {
 			$enabled_options[] = 'Proxying WPCOM requests through ' . self::get_proxy_via();
 		}
 
+		if ( get_option( self::WCPAY_RELEASE_TAG, true ) ) {
+			$enabled_options[] = 'WCPay plugin installation will use release ' . self::get_wcpay_release_tag();
+		}
+
 		if ( empty( $enabled_options ) ) {
 			return;
 		}
@@ -430,6 +505,15 @@ class WC_Payments_Dev_Tools {
 	}
 
 	/**
+	 * Returns version number override
+	 *
+	 * @return string
+	 */
+	private static function get_wcpay_release_tag() {
+		return get_option( self::WCPAY_RELEASE_TAG, '' );
+	}
+
+	/**
 	 * Gets the url for the admin page of this plugin
 	 *
 	 * @return string
@@ -442,6 +526,9 @@ class WC_Payments_Dev_Tools {
 	 * Clears the wcpay account cache
 	 */
 	private static function clear_account_cache() {
+		if ( ! class_exists( 'WC_Payments_Account' ) ) {
+			return;
+		}
 		delete_option( WC_Payments_Account::ACCOUNT_OPTION );
 	}
 
@@ -535,6 +622,65 @@ class WC_Payments_Dev_Tools {
 		}
 
 		return Jetpack_Options::get_option( 'id' );
+	}
+
+	/**
+	 * Retrieves list of releases from GitHub, stores it in a cache and
+	 * returns a parsed version
+	 *
+	 * @return array
+	 */
+	private static function get_github_releases_contents() {
+		$cache_filename = sprintf( '%s%s', get_temp_dir(), self::WCPAY_RELEASE_LIST_FILE );
+
+		$cache_modified = file_exists( $cache_filename ) ? filemtime( $cache_filename ) : 0;
+		$cache_contents = '[]'; // empty JSON array.
+		if ( time() - $cache_modified > self::WCPAY_RELEASE_CACHE_TTL_IN_SEC ) {
+			$response = wp_safe_remote_get(
+				sprintf(
+					'https://api.github.com/repos/%s/releases?per_page=50',
+					self::WCPAY_PLUGIN_REPOSITORY
+				)
+			);
+			if ( ! is_wp_error( $response ) ) {
+				$cache_contents = wp_remote_retrieve_body( $response );
+				file_put_contents( $cache_filename, $cache_contents );
+			}
+		} else {
+			$cache_contents = file_get_contents( $cache_filename );
+		}
+		return $cache_contents;
+	}
+
+	/**
+	 * Returns a formatted list of GitHub releases where key is a release tag
+	 * and value is a download filename
+	 *
+	 * @return array[]
+	 */
+	private static function get_github_releases() {
+		$releases_cache = json_decode( self::get_github_releases_contents(), true );
+
+		$release_map_func = function( $value ) {
+			$assets_filter_func = function( $value ) {
+				return self::WCPAY_ASSET_FILENAME === $value['name'];
+			};
+
+			$assets = array_filter( $value['assets'], $assets_filter_func );
+
+			if ( empty( $assets ) ) {
+				return null;
+			}
+
+			return array(
+				'tag_name'     => $value['tag_name'],
+				'name'         => $value['name'],
+				'created_at'   => $value['created_at'],
+				'download_url' => $assets[0]['browser_download_url'],
+			);
+		};
+
+		return array_filter( array_map( $release_map_func, $releases_cache ) );
 	}
 }
 
