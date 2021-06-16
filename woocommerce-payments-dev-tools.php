@@ -15,6 +15,7 @@ class WC_Payments_Dev_Tools {
 	public const REDIRECT_OPTION = 'wcpaydev_redirect';
 	public const GROUPED_SETTINGS = '_wcpay_feature_grouped_settings';
 	public const UPE = '_wcpay_feature_upe';
+	public const UPE_SETTINGS = '_wcpay_feature_upe_settings_preview';
 	public const UPE_ADDITIONAL_PAYMENT_METHODS = '_wcpay_feature_upe_additional_payment_methods';
 	public const CUSTOMER_MULTI_CURRENCY = '_wcpay_feature_customer_multi_currency';
 	public const REDIRECT_TO_OPTION = 'wcpaydev_redirect_to';
@@ -272,6 +273,7 @@ class WC_Payments_Dev_Tools {
 			self::update_option_from_checkbox( self::FORCE_DISCONNECTED_OPTION );
 			self::update_option_from_checkbox( self::GROUPED_SETTINGS );
 			self::update_option_from_checkbox( self::UPE );
+			self::update_option_from_checkbox( self::UPE_SETTINGS );
 			self::update_option_from_checkbox( self::UPE_ADDITIONAL_PAYMENT_METHODS );
 			self::update_option_from_checkbox( self::CUSTOMER_MULTI_CURRENCY );
 			self::update_option_from_checkbox( self::REDIRECT_OPTION );
@@ -342,6 +344,7 @@ class WC_Payments_Dev_Tools {
 				self::render_checkbox( self::FORCE_DISCONNECTED_OPTION, 'Force the plugin to act as disconnected from WCPay' );
 				self::render_checkbox( self::GROUPED_SETTINGS, 'Enable grouped settings' );
 				self::render_checkbox( self::UPE, 'Enable UPE checkout' );
+				self::render_checkbox( self::UPE_SETTINGS, 'Enable UPE settings changes' );
 				self::render_checkbox( self::UPE_ADDITIONAL_PAYMENT_METHODS, 'Add UPE additional payment methods' );
 				self::render_checkbox( self::CUSTOMER_MULTI_CURRENCY, 'Enable Customer multi-currency' );
 				self::render_checkbox( self::REDIRECT_OPTION, 'Enable API request redirection' );
@@ -451,6 +454,10 @@ class WC_Payments_Dev_Tools {
 
 		if ( get_option( self::UPE, false ) ) {
 			$enabled_options[] = 'UPE checkout enabled';
+		}
+
+		if ( get_option( self::UPE_SETTINGS, false ) ) {
+			$enabled_options[] = 'UPE settings enabled';
 		}
 
 		if ( get_option( self::UPE_ADDITIONAL_PAYMENT_METHODS, false ) ) {
