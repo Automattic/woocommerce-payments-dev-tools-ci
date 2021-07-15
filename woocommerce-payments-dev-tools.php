@@ -272,9 +272,9 @@ class WC_Payments_Dev_Tools {
 			self::update_option_from_checkbox( self::FORCE_ONBOARDING_OPTION );
 			self::update_option_from_checkbox( self::FORCE_DISCONNECTED_OPTION );
 			self::update_option_from_checkbox( self::GROUPED_SETTINGS );
-			self::update_option_from_checkbox( self::UPE );
-			self::update_option_from_checkbox( self::UPE_SETTINGS );
-			self::update_option_from_checkbox( self::UPE_ADDITIONAL_PAYMENT_METHODS );
+			self::enable_or_remove_option_from_checkbox( self::UPE );
+			self::enable_or_remove_option_from_checkbox( self::UPE_SETTINGS );
+			self::enable_or_remove_option_from_checkbox( self::UPE_ADDITIONAL_PAYMENT_METHODS );
 			self::update_option_from_checkbox( self::CUSTOMER_MULTI_CURRENCY );
 			self::update_option_from_checkbox( self::REDIRECT_OPTION );
 			if ( isset( $_POST[ self::REDIRECT_TO_OPTION ] ) ) {
@@ -301,6 +301,21 @@ class WC_Payments_Dev_Tools {
 	private static function update_option_from_checkbox( $option_name ) {
 		$value = isset( $_POST[ $option_name ] ) && 'on' === $_POST[ $option_name ] ? '1' : '0';
 		update_option( $option_name, $value );
+	}
+
+	/**
+	 * Enables or deletes the given option name from submitted POST values
+	 *
+	 * @param string $option_name
+	 */
+	private static function enable_or_remove_option_from_checkbox( $option_name ) {
+		$is_option_checked = isset( $_POST[ $option_name ] ) && 'on' === $_POST[ $option_name ];
+		if ( $is_option_checked ) {
+			update_option( $option_name, '1' );
+
+			return;
+		}
+		delete_option( $option_name );
 	}
 
 	/**
