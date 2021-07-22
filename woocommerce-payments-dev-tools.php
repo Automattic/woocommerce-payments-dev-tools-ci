@@ -14,6 +14,7 @@ class WC_Payments_Dev_Tools {
 	public const FORCE_ONBOARDING_OPTION = 'wcpaydev_force_onboarding';
 	public const REDIRECT_OPTION = 'wcpaydev_redirect';
 	public const GROUPED_SETTINGS = '_wcpay_feature_grouped_settings';
+	public const ACCOUNT_TASK_LIST = '_wcpay_feature_account_overview_task_list';
 	public const UPE = '_wcpay_feature_upe';
 	public const UPE_SETTINGS = '_wcpay_feature_upe_settings_preview';
 	public const UPE_ADDITIONAL_PAYMENT_METHODS = '_wcpay_feature_upe_additional_payment_methods';
@@ -272,6 +273,7 @@ class WC_Payments_Dev_Tools {
 			self::update_option_from_checkbox( self::FORCE_ONBOARDING_OPTION );
 			self::update_option_from_checkbox( self::FORCE_DISCONNECTED_OPTION );
 			self::update_option_from_checkbox( self::GROUPED_SETTINGS );
+			self::enable_or_remove_option_from_checkbox( self::ACCOUNT_TASK_LIST );
 			self::enable_or_remove_option_from_checkbox( self::UPE );
 			self::enable_or_remove_option_from_checkbox( self::UPE_SETTINGS );
 			self::enable_or_remove_option_from_checkbox( self::UPE_ADDITIONAL_PAYMENT_METHODS );
@@ -357,6 +359,7 @@ class WC_Payments_Dev_Tools {
 				self::render_checkbox( self::DEV_MODE_OPTION, 'Dev mode enabled', true );
 				self::render_checkbox( self::FORCE_ONBOARDING_OPTION, 'Force onboarding' );
 				self::render_checkbox( self::FORCE_DISCONNECTED_OPTION, 'Force the plugin to act as disconnected from WCPay' );
+				self::render_checkbox( self::ACCOUNT_TASK_LIST, 'Enable account overview task list' );
 				self::render_checkbox( self::GROUPED_SETTINGS, 'Enable grouped settings' );
 				self::render_checkbox( self::UPE, 'Enable UPE checkout' );
 				self::render_checkbox( self::UPE_SETTINGS, 'Enable UPE settings changes' );
@@ -461,6 +464,10 @@ class WC_Payments_Dev_Tools {
 
 		if ( get_option( self::REDIRECT_OPTION, false ) ) {
 			$enabled_options[] = 'Redirecting API requests to ' . self::get_redirect_to();
+		}
+
+		if ( get_option( self::ACCOUNT_TASK_LIST, false ) ) {
+			$enabled_options[] = 'Account overview task list enabled';
 		}
 
 		if ( get_option( self::GROUPED_SETTINGS, false ) ) {
