@@ -361,7 +361,8 @@ class WC_Payments_Dev_Tools {
 				self::render_checkbox( self::FORCE_DISCONNECTED_OPTION, 'Force the plugin to act as disconnected from WCPay' );
 				self::render_checkbox( self::ACCOUNT_TASK_LIST, 'Enable account overview task list' );
 				self::render_checkbox( self::GROUPED_SETTINGS, 'Enable grouped settings' );
-				self::render_checkbox( self::UPE, 'Enable UPE checkout' );
+				$has_upe_been_manually_disabled_text = 'disabled' === get_option( self::UPE ) ? ' (was disabled through WCPay, un-check to reset or save to re-enable)' : '';
+				self::render_checkbox( self::UPE, "Enable UPE checkout{$has_upe_been_manually_disabled_text}" );
 				self::render_checkbox( self::UPE_SETTINGS, 'Enable UPE settings changes' );
 				self::render_checkbox( self::UPE_ADDITIONAL_PAYMENT_METHODS, 'Add UPE additional payment methods' );
 				self::render_checkbox( self::CUSTOMER_MULTI_CURRENCY, 'Enable Customer multi-currency' );
