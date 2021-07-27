@@ -16,7 +16,6 @@ class WC_Payments_Dev_Tools {
 	public const GROUPED_SETTINGS = '_wcpay_feature_grouped_settings';
 	public const ACCOUNT_TASK_LIST = '_wcpay_feature_account_overview_task_list';
 	public const UPE = '_wcpay_feature_upe';
-	public const UPE_SETTINGS = '_wcpay_feature_upe_settings_preview';
 	public const UPE_ADDITIONAL_PAYMENT_METHODS = '_wcpay_feature_upe_additional_payment_methods';
 	public const CUSTOMER_MULTI_CURRENCY = '_wcpay_feature_customer_multi_currency';
 	public const REDIRECT_TO_OPTION = 'wcpaydev_redirect_to';
@@ -275,7 +274,6 @@ class WC_Payments_Dev_Tools {
 			self::update_option_from_checkbox( self::GROUPED_SETTINGS );
 			self::enable_or_remove_option_from_checkbox( self::ACCOUNT_TASK_LIST );
 			self::enable_or_remove_option_from_checkbox( self::UPE );
-			self::enable_or_remove_option_from_checkbox( self::UPE_SETTINGS );
 			self::enable_or_remove_option_from_checkbox( self::UPE_ADDITIONAL_PAYMENT_METHODS );
 			self::update_option_from_checkbox( self::CUSTOMER_MULTI_CURRENCY );
 			self::update_option_from_checkbox( self::REDIRECT_OPTION );
@@ -363,7 +361,6 @@ class WC_Payments_Dev_Tools {
 				self::render_checkbox( self::GROUPED_SETTINGS, 'Enable grouped settings' );
 				$has_upe_been_manually_disabled_text = 'disabled' === get_option( self::UPE ) ? ' (was disabled through WCPay, un-check to reset or save to re-enable)' : '';
 				self::render_checkbox( self::UPE, "Enable UPE checkout{$has_upe_been_manually_disabled_text}" );
-				self::render_checkbox( self::UPE_SETTINGS, 'Enable UPE settings changes' );
 				self::render_checkbox( self::UPE_ADDITIONAL_PAYMENT_METHODS, 'Add UPE additional payment methods' );
 				self::render_checkbox( self::CUSTOMER_MULTI_CURRENCY, 'Enable Customer multi-currency' );
 				self::render_checkbox( self::REDIRECT_OPTION, 'Enable API request redirection' );
@@ -477,10 +474,6 @@ class WC_Payments_Dev_Tools {
 
 		if ( get_option( self::UPE, false ) ) {
 			$enabled_options[] = 'UPE checkout enabled';
-		}
-
-		if ( get_option( self::UPE_SETTINGS, false ) ) {
-			$enabled_options[] = 'UPE settings enabled';
 		}
 
 		if ( get_option( self::UPE_ADDITIONAL_PAYMENT_METHODS, false ) ) {
