@@ -108,7 +108,10 @@ class WC_Payments_Dev_Tools {
 			return $methods;
 		}
 
+		$methods[] = 'bancontact';
 		$methods[] = 'giropay';
+		$methods[] = 'ideal';
+		$methods[] = 'p24';
 		$methods[] = 'sepa_debit';
 		$methods[] = 'sofort';
 
