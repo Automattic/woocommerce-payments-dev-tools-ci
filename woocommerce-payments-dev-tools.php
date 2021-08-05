@@ -17,7 +17,6 @@ class WC_Payments_Dev_Tools {
 	public const ACCOUNT_TASK_LIST = '_wcpay_feature_account_overview_task_list';
 	public const UPE = '_wcpay_feature_upe';
 	public const UPE_ADDITIONAL_PAYMENT_METHODS = '_wcpay_feature_upe_additional_payment_methods';
-	public const CUSTOMER_MULTI_CURRENCY = '_wcpay_feature_customer_multi_currency';
 	public const REDIRECT_TO_OPTION = 'wcpaydev_redirect_to';
 	public const PROXY_OPTION = 'wcpaydev_proxy';
 	public const PROXY_VIA_OPTION = 'wcpaydev_proxy_via';
@@ -275,7 +274,6 @@ class WC_Payments_Dev_Tools {
 			self::enable_or_remove_option_from_checkbox( self::ACCOUNT_TASK_LIST );
 			self::enable_or_remove_option_from_checkbox( self::UPE );
 			self::enable_or_remove_option_from_checkbox( self::UPE_ADDITIONAL_PAYMENT_METHODS );
-			self::update_option_from_checkbox( self::CUSTOMER_MULTI_CURRENCY );
 			self::update_option_from_checkbox( self::REDIRECT_OPTION );
 			if ( isset( $_POST[ self::REDIRECT_TO_OPTION ] ) ) {
 				update_option( self::REDIRECT_TO_OPTION, $_POST[ self::REDIRECT_TO_OPTION ] );
@@ -362,7 +360,6 @@ class WC_Payments_Dev_Tools {
 				$has_upe_been_manually_disabled_text = 'disabled' === get_option( self::UPE ) ? ' (was disabled through WCPay, un-check to reset or save to re-enable)' : '';
 				self::render_checkbox( self::UPE, "Enable UPE checkout{$has_upe_been_manually_disabled_text}" );
 				self::render_checkbox( self::UPE_ADDITIONAL_PAYMENT_METHODS, 'Add UPE additional payment methods' );
-				self::render_checkbox( self::CUSTOMER_MULTI_CURRENCY, 'Enable Customer multi-currency' );
 				self::render_checkbox( self::REDIRECT_OPTION, 'Enable API request redirection' );
 				?>
 				<p>
@@ -478,10 +475,6 @@ class WC_Payments_Dev_Tools {
 
 		if ( get_option( self::UPE_ADDITIONAL_PAYMENT_METHODS, false ) ) {
 			$enabled_options[] = 'UPE additional payment methods enabled';
-		}
-
-		if ( get_option( self::CUSTOMER_MULTI_CURRENCY, false ) ) {
-			$enabled_options[] = 'Customer multi-currency enabled';
 		}
 
 		if ( get_option( self::FORCE_ONBOARDING_OPTION, false ) ) {
