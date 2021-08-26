@@ -57,11 +57,6 @@ class WC_Pay_Dev_Billing_Clock_Admin_Actions {
 		echo '</p>';
 		echo '<hr>';
 
-		if ( $subscription_clock['frozen_time'] < gmdate( 'U' ) ) {
-			echo "<strong style='text-align: center;'>This clock is in the past, actions has been disabled.</strong>";
-			echo '<hr>';
-		}
-
 		$event                        = 'Unknown';
 		$time                         = 0;
 		$latest_invoice               = WC_Pay_Dev_Billing_Renewal_Tester::get_wcpay_invoice( $stripe_subscription['latest_invoice'] );
@@ -123,11 +118,6 @@ class WC_Pay_Dev_Billing_Clock_Admin_Actions {
 		if ( ! $subscription_clock ) {
 			$actions['wcpd_billing_clock_set_up'] = 'Set up custom billing clock';
 			return $actions;
-		}
-
-		// Disable this subscription if the billing clock's frozen time is in the past.
-		if ( $subscription_clock['frozen_time'] < gmdate( 'U' ) ) {
-			return;
 		}
 
 		$stripe_subscription = WC_Payments_Subscriptions::get_subscription_service()->get_wcpay_subscription( $theorder );
