@@ -237,6 +237,7 @@ class WC_Pay_Dev_Billing_Renewal_Tester {
 		}
 
 		// Set the Stripe Customer ID in subscription meta.
+		$subscription->update_meta_data( '_payment_method_id', $payment_method['id'] );
 		$subscription->update_meta_data( '_wcsbrt_billing_clock_customer_id', $customer['id'] );
 		$subscription->update_meta_data( '_wcpd_billing_clock_failure_card_id', $failure_payment_method['id'] );
 		$subscription->update_meta_data( '_wcpd_billing_clock_successful_card_id', $payment_method['id'] );
@@ -287,6 +288,10 @@ class WC_Pay_Dev_Billing_Renewal_Tester {
 		}
 
 		$result = self::$client->post( "/subscriptions/{$wc_pay_subscription['id']}", array( 'default_payment_method' => $card_id ) );
+
+		// Also change the payment method stored on the subscription so future changes trigger the token to update for retries.
+		$subscription->update_meta_data( '_payment_method_id', $card_id );
+		$subscription->save();
 
 		if ( is_wp_error( $result ) ) {
 			$subscription->add_order_note( "Unable to set subscription's default payment method: " . $result->get_error_message() );
