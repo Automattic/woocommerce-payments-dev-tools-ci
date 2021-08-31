@@ -32,6 +32,20 @@ class WC_Pay_Dev_Billing_Renewal_Tester {
 	private static $temporary_customer_id = null;
 
 	/**
+	 * A memory cache of WCPay Subscriptions.
+	 *
+	 * @var array
+	 */
+	private static $wcpay_subscription_cache = [];
+
+	/**
+	 * A memory cache of WCPay Billing Clocks.
+	 *
+	 * @var array
+	 */
+	private static $wcpay_clock_cache = [];
+
+	/**
 	 * Init the class.
 	 */
 	public static function init() {
@@ -49,7 +63,7 @@ class WC_Pay_Dev_Billing_Renewal_Tester {
 		WC_Pay_Dev_Billing_Clock_Admin_Actions::init();
 
 		// Add a filter to override a WP user's customer ID meta if the $temporary_customer_id has been set.
-		add_filter( 'get_user_option_' . WC_Payments_Customer_Service::WCPAY_TEST_CUSTOMER_ID_OPTION, [ __CLASS__, 'maybe_filter_wcpay_customer' ], 10, 3 );
+		add_filter( 'get_user_option_' . WC_Payments_Customer_Service::WCPAY_TEST_CUSTOMER_ID_OPTION, [ __CLASS__, 'maybe_filter_wcpay_customer' ] );
 	}
 
 	/**
@@ -82,15 +96,18 @@ class WC_Pay_Dev_Billing_Renewal_Tester {
 	 * @return array|bool The billing clock object data, otherwise false.
 	 */
 	public static function get_subscription_clock( $subscription ) {
-		$subscription = self::$subscription_service->get_wcpay_subscription( $subscription );
+		$subscription = self::get_wcpay_subscription( $subscription );
 
 		if ( ! $subscription || empty( $subscription['billing_clock'] ) ) {
 			return false;
 		}
 
-		$clock = self::$client->get( "/test/billing_clocks/{$subscription['billing_clock']}" );
+		if ( ! isset( self::$wcpay_clock_cache[ $subscription['billing_clock'] ] ) ) {
+			$clock = self::$client->get( "/test/billing_clocks/{$subscription['billing_clock']}" );
+			self::$wcpay_clock_cache[ $subscription['billing_clock'] ] = is_wp_error( $clock ) ? false : $clock;
+		}
 
-		return is_wp_error( $clock ) ? false : $clock;
+		return self::$wcpay_clock_cache[ $subscription['billing_clock'] ];
 	}
 
 	/**
@@ -254,7 +271,7 @@ class WC_Pay_Dev_Billing_Renewal_Tester {
 	 * @param string          The type of payment. Can be 'fail' or 'successful'.
 	 */
 	public static function set_payment_method_type( $subscription, $payment_type ) {
-		$wc_pay_subscription = self::$subscription_service->get_wcpay_subscription( $subscription );
+		$wc_pay_subscription = self::get_wcpay_subscription( $subscription );
 
 		if ( ! $wc_pay_subscription ) {
 			$subscription->add_order_note( "Unable to locate the subscription in Stripe billing." );
@@ -283,6 +300,42 @@ class WC_Pay_Dev_Billing_Renewal_Tester {
 	 * @return mixed The option value.
 	 */
 	public static function maybe_filter_wcpay_customer( $value ) {
-		return empty( self::$temporary_customer_id ) ? $value : self::$temporary_customer_id;
+		return empty( self::$temporary_customer_id ) ? self::maybe_get_billing_clock_wcpay_customer_from_event( $value ) : self::$temporary_customer_id;
+	}
+
+	/**
+	 * Attempts to get the billing clock customer from a subscription if there's a specific event.
+	 * eg Changing a payment method.
+	 *
+	 * @return void
+	 */
+	public static function maybe_get_billing_clock_wcpay_customer_from_event( $value ) {
+		global $wp;
+		$subscription = null;
+
+		if ( isset( $wp->query_vars['order-pay'] ) && class_exists( 'WC_Subscriptions_Change_Payment_Gateway' ) && WC_Subscriptions_Change_Payment_Gateway::$is_request_to_change_payment ) {
+			$subscription = wcs_get_subscription( absint( $wp->query_vars['order-pay'] ) );
+		}
+
+		if ( $subscription && $subscription->meta_exists( '_wcsbrt_billing_clock_customer_id' ) ) {
+			return $subscription->get_meta( '_wcsbrt_billing_clock_customer_id', true );
+		} else {
+			return $value;
+		}
+	}
+
+	/**
+	 * Gets the WCPay Subscription from a WC Subscription.
+	 *
+	 * @param WC_Subscription $subscription
+	 * @return array
+	 */
+	public static function get_wcpay_subscription( $subscription ) {
+
+		if ( ! isset( self::$wcpay_subscription_cache[ $subscription->get_id() ] ) ) {
+			self::$wcpay_subscription_cache[ $subscription->get_id() ] = self::$subscription_service->get_wcpay_subscription( $subscription );
+		}
+
+		return self::$wcpay_subscription_cache[ $subscription->get_id() ];
 	}
 }

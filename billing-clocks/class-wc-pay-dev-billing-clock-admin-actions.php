@@ -37,7 +37,7 @@ class WC_Pay_Dev_Billing_Clock_Admin_Actions {
 			return;
 		}
 
-		$stripe_subscription = WC_Payments_Subscriptions::get_subscription_service()->get_wcpay_subscription( $subscription );
+		$stripe_subscription = WC_Pay_Dev_Billing_Renewal_Tester::get_wcpay_subscription( $subscription );
 
 		if ( ! $stripe_subscription ) {
 			return;
@@ -120,7 +120,7 @@ class WC_Pay_Dev_Billing_Clock_Admin_Actions {
 			return $actions;
 		}
 
-		$stripe_subscription = WC_Payments_Subscriptions::get_subscription_service()->get_wcpay_subscription( $theorder );
+		$stripe_subscription = WC_Pay_Dev_Billing_Renewal_Tester::get_wcpay_subscription( $theorder );
 
 		if ( ! $stripe_subscription ) {
 			return;
@@ -204,7 +204,7 @@ class WC_Pay_Dev_Billing_Clock_Admin_Actions {
 			return;
 		}
 
-		$stripe_subscription = WC_Payments_Subscriptions::get_subscription_service()->get_wcpay_subscription( $subscription );
+		$stripe_subscription = WC_Pay_Dev_Billing_Renewal_Tester::get_wcpay_subscription( $subscription );
 
 		if ( ! $stripe_subscription ) {
 			$subscription->add_order_note( "Request to advance the clock failed. Failed to load the corresponding Stripe Billing Subscription." );
@@ -239,7 +239,7 @@ class WC_Pay_Dev_Billing_Clock_Admin_Actions {
 			return;
 		}
 
-		$stripe_subscription = WC_Payments_Subscriptions::get_subscription_service()->get_wcpay_subscription( $subscription );
+		$stripe_subscription = WC_Pay_Dev_Billing_Renewal_Tester::get_wcpay_subscription( $subscription );
 
 		if ( ! $stripe_subscription ) {
 			$subscription->add_order_note( "Request to advance the clock failed. Failed to load the corresponding Stripe Billing Subscription." );
@@ -274,7 +274,7 @@ class WC_Pay_Dev_Billing_Clock_Admin_Actions {
 			return;
 		}
 
-		$stripe_subscription = WC_Payments_Subscriptions::get_subscription_service()->get_wcpay_subscription( $subscription );
+		$stripe_subscription = WC_Pay_Dev_Billing_Renewal_Tester::get_wcpay_subscription( $subscription );
 
 		if ( ! $stripe_subscription ) {
 			$subscription->add_order_note( "Request to advance the clock failed. Failed to load the corresponding Stripe Billing Subscription." );
