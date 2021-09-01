@@ -24,14 +24,6 @@ class WC_Pay_Dev_Billing_Renewal_Tester {
 	private static $subscription_service;
 
 	/**
-	 * A Stripe Customer ID to override a customer's default customer ID with.
-	 * Used when creating a subscription for a billing-clock-enabled customer.
-	 *
-	 * @var string
-	 */
-	private static $temporary_customer_id = null;
-
-	/**
 	 * A memory cache of WCPay Subscriptions.
 	 *
 	 * @var array
@@ -61,9 +53,6 @@ class WC_Pay_Dev_Billing_Renewal_Tester {
 		// Edit Subscription Actions
 		require_once __DIR__ . '/class-wc-pay-dev-billing-clock-admin-actions.php';
 		WC_Pay_Dev_Billing_Clock_Admin_Actions::init();
-
-		// Add a filter to override a WP user's customer ID meta if the $temporary_customer_id has been set.
-		add_filter( 'get_user_option_' . WC_Payments_Customer_Service::WCPAY_TEST_CUSTOMER_ID_OPTION, [ __CLASS__, 'maybe_filter_wcpay_customer' ] );
 	}
 
 	/**
@@ -158,6 +147,13 @@ class WC_Pay_Dev_Billing_Renewal_Tester {
 		$name  = array( 'Test-Subscription', $subscription->get_id());
 		$email = strtolower( implode( '_', $name ) . '@example.com' );
 
+		$user_id = wc_create_new_customer(
+			$email,
+			wc_create_new_customer_username( $email, $name ),
+			'password',
+			$name
+		);
+
 		$payment_method = self::$client->post(
 			'/payment_methods',
 			array(
@@ -236,11 +232,47 @@ class WC_Pay_Dev_Billing_Renewal_Tester {
 			return;
 		}
 
+		update_user_meta( $user_id, WC_Payments_Customer_Service::WCPAY_TEST_CUSTOMER_ID_OPTION, $customer['id'] );
+
+		// Set the subscription's customer to the Billing Clock enabled customer.
+		$subscription->set_customer_id( $user_id );
+
 		// Set the Stripe Customer ID in subscription meta.
-		$subscription->update_meta_data( '_payment_method_id', $payment_method['id'] );
 		$subscription->update_meta_data( '_wcsbrt_billing_clock_customer_id', $customer['id'] );
-		$subscription->update_meta_data( '_wcpd_billing_clock_failure_card_id', $failure_payment_method['id'] );
-		$subscription->update_meta_data( '_wcpd_billing_clock_successful_card_id', $payment_method['id'] );
+
+		// Create the WC Tokens.
+		// Failing payment token.
+		$fail_token = new WC_Payment_Token_CC();
+		$fail_token->set_gateway_id( 'woocommerce_payments' );
+		$fail_token->set_expiry_month( $failure_payment_method['card']['exp_month'] );
+		$fail_token->set_expiry_year( $failure_payment_method['card']['exp_year'] );
+		$fail_token->set_card_type( strtolower( $failure_payment_method['card']['brand'] ) );
+		$fail_token->set_last4( $failure_payment_method['card']['last4'] );
+
+		$fail_token->set_token( $failure_payment_method['id'] );
+		$fail_token->set_user_id( $user_id );
+		$fail_token->save();
+
+		// Successful payment token.
+		$success_token = new WC_Payment_Token_CC();
+		$success_token->set_gateway_id( 'woocommerce_payments' );
+		$success_token->set_expiry_month( $payment_method['card']['exp_month'] );
+		$success_token->set_expiry_year( $payment_method['card']['exp_year'] );
+		$success_token->set_card_type( strtolower( $payment_method['card']['brand'] ) );
+		$success_token->set_last4( $payment_method['card']['last4'] );
+
+		$success_token->set_token( $payment_method['id'] );
+		$success_token->set_user_id( $user_id );
+		$success_token->save();
+
+		$subscription->update_meta_data( '_wcpd_billing_clock_failure_token_id', $fail_token->get_id() );
+		$subscription->update_meta_data( '_wcpd_billing_clock_successful_token_id', $success_token->get_id() );
+
+		// Set the subscription token to be the successful payment method by default.
+		$subscription->add_payment_token( $fail_token );
+		$subscription->add_payment_token( $success_token );
+		$subscription->update_meta_data( '_payment_method_id', $payment_method['id'] );
+
 		$subscription->save();
 	}
 
@@ -250,10 +282,7 @@ class WC_Pay_Dev_Billing_Renewal_Tester {
 	 * @param WC_Subscription $subscription
 	 */
 	public static function create_billing_clock_subscription( $subscription ) {
-		// Temporarily override the subscription user's WC Pay customer ID so the subscription will be created for the customer with the billing clock.
-		self::$temporary_customer_id = $subscription->get_meta( '_wcsbrt_billing_clock_customer_id', true );
 		self::$subscription_service->create_subscription( $subscription );
-		self::$temporary_customer_id = null;
 
 		$invoice_id = WC_Payments_Subscriptions::get_invoice_service()->get_subscription_invoice_id( $subscription );
 
@@ -279,33 +308,32 @@ class WC_Pay_Dev_Billing_Renewal_Tester {
 			return;
 		}
 
-		$card_meta_key = 'fail' === $payment_type ? '_wcpd_billing_clock_failure_card_id' : '_wcpd_billing_clock_successful_card_id';
-		$card_id       = $subscription->get_meta( $card_meta_key, true );
+		$token_meta_key = 'fail' === $payment_type ? '_wcpd_billing_clock_failure_token_id' : '_wcpd_billing_clock_successful_token_id';
+		$token_id       = $subscription->get_meta( $token_meta_key, true );
 
-		if ( ! $card_id ) {
-			$subscription->add_order_note( "Unable to locate the customer's '{$payment_type}' card ID in user meta." );
+		if ( ! $token_id ) {
+			$subscription->add_order_note( "Unable to locate the customer's '{$payment_type}' token ID in user meta." );
 			return;
 		}
 
-		$result = self::$client->post( "/subscriptions/{$wc_pay_subscription['id']}", array( 'default_payment_method' => $card_id ) );
+		$token = WC_Payment_Tokens::get( $token_id );
+
+		if ( ! $token ) {
+			$subscription->add_order_note( "Unable to load the customer's '{$payment_type}' token." );
+			return;
+		}
+
+		$payment_id = $token->get_token();
+		$result     = self::$client->post( "/subscriptions/{$wc_pay_subscription['id']}", array( 'default_payment_method' => $payment_id ) );
 
 		// Also change the payment method stored on the subscription so future changes trigger the token to update for retries.
-		$subscription->update_meta_data( '_payment_method_id', $card_id );
+		$subscription->add_payment_token( $token );
+		$subscription->update_meta_data( '_payment_method_id', $payment_id );
 		$subscription->save();
 
 		if ( is_wp_error( $result ) ) {
 			$subscription->add_order_note( "Unable to set subscription's default payment method: " . $result->get_error_message() );
 		}
-	}
-
-	/**
-	 * Returns a different WCPay customer ID to the get_user_option call if the self::$temporary_customer_id has been set.
-	 *
-	 * @param mixed $value The default option value.
-	 * @return mixed The option value.
-	 */
-	public static function maybe_filter_wcpay_customer( $value ) {
-		return empty( self::$temporary_customer_id ) ? self::maybe_get_billing_clock_wcpay_customer_from_event( $value ) : self::$temporary_customer_id;
 	}
 
 	/**
