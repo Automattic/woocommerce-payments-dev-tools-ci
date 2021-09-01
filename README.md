@@ -13,7 +13,7 @@ A suite of tools helpful when developing WooCommerce Payments.
 
 In order to test WCPay Billing Subscriptions without needing to wait for each renewal, you'll need to use Stripe's Billing Clock feature. A billing clock is essentially a "frozen clock" assigned to a WCPay subscription that can be advanced manually via API requests. This enables us to move a subscription's internal clock forward to a time in the future when an event is due, Stripe will then trigger the events sending the related webhooks - enabling us to observe them. This is particularly helpful in testing successful and unsuccessful renewal orders without needing to wait days.
 
-It's important to remember that when a subscription is set up  with a billing clock, **the subscription is frozen and will not advance by itself. You can no longer wait for a renewal - you can only advance the subscription's clock manually**. Because of this, it's possible that if a clock falls behind world time, things may go awry on WC's end. To prevent issues, subscriptions with a billing clock in the past are disabled.
+It's important to remember that when a subscription is set up with a billing clock, **the subscription is frozen and will not advance by itself. You can no longer wait for a renewal - you can only advance the subscription's clock manually**. Because of this, it's possible that if a clock falls behind world time, things may go awry on WC's end. To prevent issues, its is not adivised to advance a billing clock that has fallen behind.
 #### To set up a Billing Clock test subscription:
 
 **Initial setup:**
@@ -29,6 +29,7 @@ It's important to remember that when a subscription is set up  with a billing cl
    3. Save
 3. Once the subscription is saved you'll notice a couple of things.
      - The subscription will have a new Stripe Subscription ID and the old one will have been cancelled. A new subscription is required because billing clocks are assigned to Stripe customer objects and so a new stripe customer and by extension, a new stripe subscription is needed.
+     - The subscription will have a new customer. This WP user has a username that follows the format `test-subscription_{subscription_id}`. This new user is necessary because we need to store the Stripe Customer's payment methods as tokens against the user ID and we don't want to get them tangled with your admin user.
      - There's a new section in the subscription's schedule metabox that includes some information about the subscription's billing clock like the current clock's time, and the next event we expect based on the state of the subscription in Stripe.
 
 <img width="292" alt="" src="https://user-images.githubusercontent.com/8490476/130905590-ea741b3d-ff26-4462-bec9-b68564d1d164.png">
@@ -52,3 +53,15 @@ To process a renewal, there is a 3 multi-step process involving upcoming invoice
 6. The latest renewal invoice should then process as expected depending on which option you chose.
 
 <img width="309" alt="" src="https://user-images.githubusercontent.com/8490476/130906781-1821a926-32aa-4944-89fc-671fefbfe3c2.png">
+
+### To pay for failed renewals:
+
+1. Follow the steps above to create a failed renewal order/invoice.
+2. In an incognito browser window or a different browser log in as the billing clock customer.
+    - Username: `test-subscription_{subscription_id}` eg test-subscription_123.
+    - Password: `password`
+3. Go to My Account > My Subscription.
+4. Click the **Update payment** or scroll down to the renewal order and click **Pay**
+5. Enter a new payment method or choose a saved method.
+6. Submit the form.
+7. If the new payment method you selected is successful, the subscription should activate.
