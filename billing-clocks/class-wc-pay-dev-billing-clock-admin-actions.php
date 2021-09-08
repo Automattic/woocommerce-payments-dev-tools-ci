@@ -156,7 +156,7 @@ class WC_Pay_Dev_Billing_Clock_Admin_Actions {
 
 		// If there's an invoice, we might need to add an action to process it.
 		if ( $upcoming_invoice ) {
-			$actions['wcpd_billing_clock_invoice_created'] = 'Trigger invoice created';
+			$actions['wcpd_billing_clock_invoice_created'] = 'Trigger invoice creation';
 
 			return $actions;
 		}
