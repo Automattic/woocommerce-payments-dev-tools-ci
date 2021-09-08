@@ -219,9 +219,9 @@ class WC_Pay_Dev_Billing_Clock_Admin_Actions {
 			$date  = wcs_get_datetime_from( $new_clock_time )->date_i18n( wc_date_format(). ' ' . wc_time_format() );
 
 			if ( ! $clock ) {
-				$subscription->add_order_note( "Error occured trying to advanced the Stripe Billing clock to half an hour prior to renewal - {$date}.{$clock->get_error_message()}." );
+				$subscription->add_order_note( "Upcoming invoice triggered. Error occured trying to advanced the Stripe Billing clock to half an hour prior to renewal - {$date}.{$clock->get_error_message()}." );
 			} else {
-				$subscription->add_order_note( "Advanced the Stripe Billing clock to half an hour prior to renewal - {$date}." );
+				$subscription->add_order_note( "Upcoming invoice triggered. Advanced the Stripe Billing clock to half an hour prior to renewal - {$date}." );
 			}
 		}
 	}
@@ -254,9 +254,9 @@ class WC_Pay_Dev_Billing_Clock_Admin_Actions {
 			$date  = wcs_get_datetime_from( $next_payment_time )->date_i18n( wc_date_format(). ' ' . wc_time_format() );
 
 			if ( ! $clock ) {
-				$subscription->add_order_note( "Error occured trying to advanced the Stripe Billing clock to {$date}.{$clock->get_error_message()}." );
+				$subscription->add_order_note( "Invoice creation triggered. Error occured trying to advanced the Stripe Billing clock to {$date}.{$clock->get_error_message()}." );
 			} else {
-				$subscription->add_order_note( "Advanced the Stripe Billing clock to next payment (current_period_end) {$date}." );
+				$subscription->add_order_note( "Invoice creation triggered. Advanced the Stripe Billing clock to next payment (current_period_end) {$date}." );
 			}
 		}
 	}
@@ -301,10 +301,10 @@ class WC_Pay_Dev_Billing_Clock_Admin_Actions {
 
 		if ( ! $clock ) {
 			$date = wcs_get_datetime_from( $stripe_subscription['current_period_end'] )->date_i18n( wc_date_format(). ' ' . wc_time_format() );
-			$subscription->add_order_note( "Error occured trying to advanced the Stripe Billing clock to invoice date: {$date}.{$clock->get_error_message()}." );
+			$subscription->add_order_note( ucfirst( $payment_type ) . " latest invoice triggered. Error occured trying to advanced the Stripe Billing clock to invoice date: {$date}.{$clock->get_error_message()}." );
 		} else {
 			$date = wcs_get_datetime_from( $clock['frozen_time'] )->date_i18n( wc_date_format(). ' ' . wc_time_format() );
-			$subscription->add_order_note( "Advanced the Stripe Billing clock to invoice date: {$date}." );
+			$subscription->add_order_note( ucfirst( $payment_type ) . " latest invoice triggered. Advanced the Stripe Billing clock to invoice date: {$date}." );
 		}
 	}
 }
