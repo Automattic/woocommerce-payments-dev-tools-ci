@@ -57,10 +57,8 @@ class WC_Pay_Dev_Billing_Clock_Admin_Actions {
 		echo '</p>';
 		echo '<hr>';
 
-		$event                        = 'Unknown';
-		$time                         = 0;
-		$latest_invoice               = WC_Pay_Dev_Billing_Renewal_Tester::get_wcpay_invoice( $stripe_subscription['latest_invoice'] );
-		$next_payment_within_the_hour = ( $stripe_subscription['current_period_end'] ) <= $subscription_clock['frozen_time'] + HOUR_IN_SECONDS;
+		$latest_invoice = WC_Pay_Dev_Billing_Renewal_Tester::get_wcpay_invoice( $stripe_subscription['latest_invoice'] );
+		$next_event     = WC_Pay_Dev_Billing_Renewal_Tester::get_next_event( $subscription );
 
 		// Display invoice information.
 		if ( 'past_due' === $stripe_subscription['status'] ) {
@@ -73,25 +71,13 @@ class WC_Pay_Dev_Billing_Clock_Admin_Actions {
 
 			return;
 		} elseif ( $latest_invoice && isset( $latest_invoice['status'], $latest_invoice['id'] ) && 'draft' === $latest_invoice['status'] ) {
-			$invoice_id   = $latest_invoice['id'];
-
-			$event        = "<a href='https://dashboard.stripe.com/{$account_id}/test/invoices/{$invoice_id}'>Invoice</a>";
-			$time         = $latest_invoice['next_payment_attempt'];
-		} elseif ( $next_payment_within_the_hour ) {
-			$event ='<span style="font-family:monospace">invoice.created</span>';;
-			$time  = $stripe_subscription['current_period_end'];
-		} else {
-			$event = '<span style="font-family:monospace">invoice.upcoming</span>';
+			$invoice_id = $latest_invoice['id'];
+			$event      = "<a href='https://dashboard.stripe.com/{$account_id}/test/invoices/{$invoice_id}'>Invoice</a> payment";
 		}
 
-		echo "<p><strong>Next event:</strong> $event</br>";
-		echo '<strong>GMT:</strong> ' . ( $time ? gmdate( $format, $time ) : '(?)' );
+		echo '<p><strong>Next event:</strong> <span style="font-family:monospace">' . $next_event . '</span></br>';
 
-		if ( $time ) {
-			echo '</br><strong>Relative:</strong> in ' . human_time_diff( $subscription_clock['frozen_time'], $time );
-		}
-
-		echo "</br></br><sub>This is a best guess based on the subscription state in Stripe.</sub>";
+		echo "<sub>This is a best guess based on what the last event that was triggered.</sub>";
 		echo '<hr>';
 	}
 
@@ -131,37 +117,59 @@ class WC_Pay_Dev_Billing_Clock_Admin_Actions {
 			return;
 		}
 
+		// Add an action depending on what the next event should be.
+		switch ( WC_Pay_Dev_Billing_Renewal_Tester::get_next_event( $theorder ) ) {
+			case 'invoice.paid':
+				$actions['wcpd_billing_clock_process_renewal']      = 'Process latest invoice';
+				$actions['wcpd_billing_clock_process_fail_renewal'] = 'Fail the next invoice';
+				break;
+			case 'invoice.created':
+				$actions['wcpd_billing_clock_invoice_created'] = 'Trigger invoice creation';
+				break;
+			case 'invoice.upcoming':
+			default:
+				$actions['wcpd_billing_clock_upcoming_invoice'] = 'Trigger upcoming invoice';
+				break;
+		}
+
+		return $actions;
+	}
+
+	/**
+	 * Gets the next expected event from the WCPay/Stripe Subscription state.
+	 *
+	 * @param array $stripe_subscription The stripe subscripotion record.
+	 * @param array $billing_clock       The stripe billing clock record.
+	 *
+	 * @return string The next event. Can be: 'invoice.paid', 'invoice.upcoming', 'invoice.created' or an empty string.
+	 */
+	protected static function get_next_event_from_wc_pay_subscription( $stripe_subscription, $billing_clock ) {
+
 		// If there's a draft invoice, we might need to add an action to process it.
 		if ( isset( $stripe_subscription['latest_invoice'] ) ) {
 			$latest_invoice = WC_Pay_Dev_Billing_Renewal_Tester::get_wcpay_invoice( $stripe_subscription['latest_invoice'] );
 
 			if ( isset( $latest_invoice['status'] ) && 'draft' === $latest_invoice['status'] ) {
-				$actions['wcpd_billing_clock_process_renewal']      = 'Process latest invoice';
-				$actions['wcpd_billing_clock_process_fail_renewal'] = 'Fail the next invoice';
-
-				return $actions;
+				return 'invoice.paid';
 			}
 		}
 
-		$next_payment_within_the_hour = ( $stripe_subscription['current_period_end'] ) <= $subscription_clock['frozen_time'] + HOUR_IN_SECONDS;
+		$next_payment_within_two_days = ( $stripe_subscription['current_period_end'] ) <= $billing_clock['frozen_time'] + ( 2 * DAY_IN_SECONDS );
 
 		// If all action criteria has failed, add an action to advance the clock to the next renewal time.
-		if ( isset( $stripe_subscription['status'], $stripe_subscription['current_period_end'] ) && 'active' === $stripe_subscription['status'] && ! $next_payment_within_the_hour ) {
-			$actions['wcpd_billing_clock_upcoming_invoice'] = 'Trigger upcoming invoice';
-
-			return $actions;
+		if ( isset( $stripe_subscription['status'] ) && 'active' === $stripe_subscription['status'] && ! $next_payment_within_two_days ) {
+			return 'invoice.upcoming';
 		}
 
 		$upcoming_invoice = WC_Pay_Dev_Billing_Renewal_Tester::get_upcoming_invoice( $stripe_subscription['id'] );
 
 		// If there's an invoice, we might need to add an action to process it.
 		if ( $upcoming_invoice ) {
-			$actions['wcpd_billing_clock_invoice_created'] = 'Trigger invoice creation';
-
-			return $actions;
+			return 'invoice.created';
 		}
 
-		return $actions;
+		// There's no event(?)
+		return '';
 	}
 
 	/**
@@ -189,6 +197,9 @@ class WC_Pay_Dev_Billing_Clock_Admin_Actions {
 
 		// Now that we have a Stripe billing customer with a billing clock assigned, we need to recreate the subscription in Stripe assigned to this customer.
 		WC_Pay_Dev_Billing_Renewal_Tester::create_billing_clock_subscription( $subscription );
+
+		// Record that the subscription was set up. Signalling that the next event should be invoice.upcoming.
+		WC_Pay_Dev_Billing_Renewal_Tester::record_event_trigger( $subscription, 'setup' );
 	}
 
 	/**
@@ -197,32 +208,28 @@ class WC_Pay_Dev_Billing_Clock_Admin_Actions {
 	 * @param WC_Subscription $subscription
 	 */
 	public static function progress_clock_to_upcoming_invoice( $subscription ) {
-		$subscription_clock = WC_Pay_Dev_Billing_Renewal_Tester::get_subscription_clock( $subscription );
 
-		if ( ! $subscription_clock ) {
-			$subscription->add_order_note( "Request to advance the clock failed. The subscription doesn't have a clock object assigned." );
+		if ( ! self::validate_triggering_event( $subscription, 'invoice.upcoming' ) ) {
 			return;
 		}
 
+		$subscription_clock  = WC_Pay_Dev_Billing_Renewal_Tester::get_subscription_clock( $subscription );
 		$stripe_subscription = WC_Pay_Dev_Billing_Renewal_Tester::get_wcpay_subscription( $subscription );
 
-		if ( ! $stripe_subscription ) {
-			$subscription->add_order_note( "Request to advance the clock failed. Failed to load the corresponding Stripe Billing Subscription." );
-			return;
-		}
-
 		if ( isset( $stripe_subscription['status'], $stripe_subscription['current_period_end'] ) ) {
-			$new_clock_time = $stripe_subscription['current_period_end'] - ( HOUR_IN_SECONDS / 2 );
+			$new_clock_time = $stripe_subscription['current_period_end'] - ( 2 * DAY_IN_SECONDS );
 
 			// Move the billing clock to be half an hour before the next payment.
 			$clock = WC_Pay_Dev_Billing_Renewal_Tester::advance_clock( $subscription_clock['id'], $new_clock_time );
 			$date  = wcs_get_datetime_from( $new_clock_time )->date_i18n( wc_date_format(). ' ' . wc_time_format() );
 
 			if ( ! $clock ) {
-				$subscription->add_order_note( "Upcoming invoice triggered. Error occured trying to advanced the Stripe Billing clock to half an hour prior to renewal - {$date}.{$clock->get_error_message()}." );
+				$subscription->add_order_note( "Upcoming invoice triggered. Error occured trying to advanced the Stripe Billing clock to 2 days prior to renewal - {$date}.{$clock->get_error_message()}." );
 			} else {
-				$subscription->add_order_note( "Upcoming invoice triggered. Advanced the Stripe Billing clock to half an hour prior to renewal - {$date}." );
+				$subscription->add_order_note( "Upcoming invoice triggered. Advanced the Stripe Billing clock to 2 days prior to renewal - {$date}." );
 			}
+
+			WC_Pay_Dev_Billing_Renewal_Tester::record_event_trigger( $subscription, 'invoice.upcoming' );
 		}
 	}
 
@@ -232,32 +239,28 @@ class WC_Pay_Dev_Billing_Clock_Admin_Actions {
 	 * @param WC_Subscription $subscription
 	 */
 	public static function progress_clock_to_invoice_created( $subscription ){
-		$subscription_clock = WC_Pay_Dev_Billing_Renewal_Tester::get_subscription_clock( $subscription );
 
-		if ( ! $subscription_clock ) {
-			$subscription->add_order_note( "Request to advance the clock failed. The subscription doesn't have a clock object assigned." );
+		if ( ! self::validate_triggering_event( $subscription, 'invoice.created' ) ) {
 			return;
 		}
 
+		$subscription_clock  = WC_Pay_Dev_Billing_Renewal_Tester::get_subscription_clock( $subscription );
 		$stripe_subscription = WC_Pay_Dev_Billing_Renewal_Tester::get_wcpay_subscription( $subscription );
-
-		if ( ! $stripe_subscription ) {
-			$subscription->add_order_note( "Request to advance the clock failed. Failed to load the corresponding Stripe Billing Subscription." );
-			return;
-		}
 
 		if ( isset( $stripe_subscription['status'], $stripe_subscription['current_period_end'] ) ) {
 			$next_payment_time = $stripe_subscription['current_period_end'];
 
-			// Move the billing clock to be half an hour before the next payment.
+			// Move the billing clock to the next payment date.
 			$clock = WC_Pay_Dev_Billing_Renewal_Tester::advance_clock( $subscription_clock['id'], $next_payment_time );
 			$date  = wcs_get_datetime_from( $next_payment_time )->date_i18n( wc_date_format(). ' ' . wc_time_format() );
 
 			if ( ! $clock ) {
-				$subscription->add_order_note( "Invoice creation triggered. Error occured trying to advanced the Stripe Billing clock to {$date}.{$clock->get_error_message()}." );
+				$subscription->add_order_note( "Invoice creation triggered. Error occured trying to advanced the Stripe Billing clock to the next payment (current_period_end) {$date}.{$clock->get_error_message()}." );
 			} else {
-				$subscription->add_order_note( "Invoice creation triggered. Advanced the Stripe Billing clock to next payment (current_period_end) {$date}." );
+				$subscription->add_order_note( "Invoice creation triggered. Advanced the Stripe Billing clock to the next payment (current_period_end) {$date}." );
 			}
+
+			WC_Pay_Dev_Billing_Renewal_Tester::record_event_trigger( $subscription, 'invoice.created' );
 		}
 	}
 
@@ -267,44 +270,81 @@ class WC_Pay_Dev_Billing_Clock_Admin_Actions {
 	 * @param WC_Subscription $subscription
 	 */
 	public static function progress_clock_to_process_renewal( $subscription ) {
-		$subscription_clock = WC_Pay_Dev_Billing_Renewal_Tester::get_subscription_clock( $subscription );
 
-		if ( ! $subscription_clock ) {
-			$subscription->add_order_note( "Request to advance the clock failed. The subscription doesn't have a clock object assigned." );
+		if ( ! self::validate_triggering_event( $subscription, 'invoice.paid' ) ) {
 			return;
 		}
 
+		$subscription_clock  = WC_Pay_Dev_Billing_Renewal_Tester::get_subscription_clock( $subscription );
 		$stripe_subscription = WC_Pay_Dev_Billing_Renewal_Tester::get_wcpay_subscription( $subscription );
+		$invoice             = WC_Pay_Dev_Billing_Renewal_Tester::get_wcpay_invoice( $stripe_subscription['latest_invoice'] );
 
-		if ( ! $stripe_subscription ) {
-			$subscription->add_order_note( "Request to advance the clock failed. Failed to load the corresponding Stripe Billing Subscription." );
-			return;
-		}
-
-		if ( ! isset( $stripe_subscription['latest_invoice'] ) ) {
-			$subscription->add_order_note( "Request to advance the clock to process the renewal. The Stripe Billing subscription doesn't have an invoice." );
-			return;
-		}
-
-		$invoice = WC_Pay_Dev_Billing_Renewal_Tester::get_wcpay_invoice( $stripe_subscription['latest_invoice'] );
-
-		if ( ! $invoice ) {
-			$subscription->add_order_note( "Request to advance the clock to process the renewal. The Stripe Billing subscription invoice {} couldnt be loaded" );
-			return;
-		}
-
-		// Before advancing the clock, make sure we set the right payment method set on the customer to trigger a success or failure.
+		// Before advancing the clock, make sure we set the right payment method to trigger a success or failure.
 		$payment_type = 'woocommerce_order_action_wcpd_billing_clock_process_fail_renewal' === current_filter() ? 'fail' : 'success';
 		WC_Pay_Dev_Billing_Renewal_Tester::set_payment_method_type( $subscription, $payment_type );
 
 		$clock = WC_Pay_Dev_Billing_Renewal_Tester::advance_clock( $subscription_clock['id'], $invoice['next_payment_attempt'] + MINUTE_IN_SECONDS );
 
-		if ( ! $clock ) {
+		if ( is_wp_error( $clock ) ) {
 			$date = wcs_get_datetime_from( $stripe_subscription['current_period_end'] )->date_i18n( wc_date_format(). ' ' . wc_time_format() );
 			$subscription->add_order_note( ucfirst( $payment_type ) . " latest invoice triggered. Error occured trying to advanced the Stripe Billing clock to invoice date: {$date}.{$clock->get_error_message()}." );
 		} else {
 			$date = wcs_get_datetime_from( $clock['frozen_time'] )->date_i18n( wc_date_format(). ' ' . wc_time_format() );
 			$subscription->add_order_note( ucfirst( $payment_type ) . " latest invoice triggered. Advanced the Stripe Billing clock to invoice date: {$date}." );
 		}
+
+		if ( 'success' === $payment_type ) {
+			WC_Pay_Dev_Billing_Renewal_Tester::record_event_trigger( $subscription, 'invoice.paid' );
+		} else {
+			WC_Pay_Dev_Billing_Renewal_Tester::record_event_trigger( $subscription, 'invoice.failed' );
+		}
+	}
+
+	/**
+	 * Validate that the subscription is valid to trigger a given event.
+	 *
+	 * @param WC_Subscription $subscription The WC Subscription we're validating a event for.
+	 * @param string          $event        The event being triggered.
+	 *
+	 * @return bool Whether the event is valid or not.
+	 */
+	private static function validate_triggering_event( $subscription, $event ) {
+		$subscription_clock = WC_Pay_Dev_Billing_Renewal_Tester::get_subscription_clock( $subscription );
+
+		if ( ! $subscription_clock ) {
+			$subscription->add_order_note( "Request to advance the clock failed. The subscription doesn't have a clock object assigned." );
+			return false;
+		}
+
+		$stripe_subscription = WC_Pay_Dev_Billing_Renewal_Tester::get_wcpay_subscription( $subscription );
+
+		if ( ! $stripe_subscription ) {
+			$subscription->add_order_note( "Request to advance the clock failed. Failed to load the corresponding Stripe Billing Subscription." );
+			return false;
+		}
+
+		if ( 'past_due' === $stripe_subscription['status'] ) {
+			return false;
+		}
+
+		$next_event = self::get_next_event_from_wc_pay_subscription( $stripe_subscription, $subscription_clock );
+
+		if ( $event !== $next_event ) {
+			$next_event_for_display = $next_event;
+
+			// If for whatever reason we couldn't determine the next event from the Billing Subscription. Fallback to 'invoice.upcoming'.
+			if ( '' === $next_event ) {
+				$next_event_for_display = '{unknown}';
+				$next_event             = 'invoice.upcoming';
+			}
+
+			$subscription->add_order_note( "Request to trigger the '{$event}' failed. The next expected event should be '{$next_event_for_display}'." );
+
+			// Reset the next expected event.
+			WC_Pay_Dev_Billing_Renewal_Tester::set_next_event( $subscription, $next_event );
+			return false;
+		}
+
+		return true;
 	}
 }

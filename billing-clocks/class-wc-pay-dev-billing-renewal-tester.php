@@ -10,6 +10,26 @@ defined( 'ABSPATH' ) || exit;
 class WC_Pay_Dev_Billing_Renewal_Tester {
 
 	/**
+	 * The meta key which stores what we expect the next event will be.
+	 */
+	const NEXT_EVENT_META_KEY = '_wcpay_dbc_next_event';
+
+	/**
+	 * After sending a request to fail an invoice payment, we store the timestamp so it is locked as failed/
+	 *
+	 * This lock remains inplace for @see FAILED_INVOICE_LOCK_TIME number of seconds - enough time for Stripe to have processed the fail request.
+	 */
+	const FAILED_TIMESTAMP_META_KEY = '_wcpay_dbc_failed_invoice_timestamp';
+
+	/**
+	 * The number of seconds a subscription is locked as failed.
+	 *
+	 * This is enough time for Stripe to process the payment request, for it to fail, and for the subscription to be "past-due".
+	 * After this time has elapsed, we then just check the subscription to see if it has been paid and has been reactivated.
+	 */
+	const FAILED_INVOICE_LOCK_TIME = 20;
+
+	/**
 	 * The billing clock client.
 	 *
 	 * @var WC_Pay_Dev_Billing_Clock_Client
@@ -91,12 +111,22 @@ class WC_Pay_Dev_Billing_Renewal_Tester {
 			return false;
 		}
 
-		if ( ! isset( self::$wcpay_clock_cache[ $subscription['billing_clock'] ] ) ) {
-			$clock = self::$client->get( "/test/billing_clocks/{$subscription['billing_clock']}" );
-			self::$wcpay_clock_cache[ $subscription['billing_clock'] ] = is_wp_error( $clock ) ? false : $clock;
+		return self::get_clock( $subscription['billing_clock'] );
+	}
+
+	/**
+	 * Undocumented function
+	 *
+	 * @param [type] $clock_id
+	 * @return void
+	 */
+	public static function get_clock( $clock_id ) {
+		if ( ! isset( self::$wcpay_clock_cache[ $clock_id ] ) ) {
+			$clock = self::$client->get( "/test/billing_clocks/{$clock_id}" );
+			self::$wcpay_clock_cache[ $clock_id ] = is_wp_error( $clock ) ? false : $clock;
 		}
 
-		return self::$wcpay_clock_cache[ $subscription['billing_clock'] ];
+		return self::$wcpay_clock_cache[ $clock_id ];
 	}
 
 	/**
@@ -135,7 +165,7 @@ class WC_Pay_Dev_Billing_Renewal_Tester {
 			)
 		);
 
-		return is_wp_error( $clock ) ? false : $clock;
+		return $clock;
 	}
 
 	/**
@@ -284,14 +314,20 @@ class WC_Pay_Dev_Billing_Renewal_Tester {
 	public static function create_billing_clock_subscription( $subscription ) {
 		self::$subscription_service->create_subscription( $subscription );
 
-		$invoice_id = WC_Payments_Subscriptions::get_invoice_service()->get_subscription_invoice_id( $subscription );
+		// Update the Stripe Billing subscription's payment method to match the successful card.
+		$payment_method_id = $subscription->get_meta( '_payment_method_id' );
 
-		if ( ! $invoice_id ) {
-			return;
+		if ( $payment_method_id ) {
+			$wcpay_subscription_id = WC_Payments_Subscription_Service::get_wcpay_subscription_id( $subscription );
+			WC_Payments::get_payments_api_client()->update_subscription( $wcpay_subscription_id, [ 'default_payment_method' => $payment_method_id ] );
 		}
 
-		// Update the status of the invoice but don't charge the customer by using paid_out_of_band parameter.
-		WC_Payments::get_payments_api_client()->charge_invoice( $invoice_id, [ 'paid_out_of_band' => 'true' ] );
+		$invoice_id = WC_Payments_Subscriptions::get_invoice_service()->get_subscription_invoice_id( $subscription );
+
+		if ( $invoice_id ) {
+			// Update the status of the invoice but don't charge the customer by using paid_out_of_band parameter.
+			WC_Payments::get_payments_api_client()->charge_invoice( $invoice_id, [ 'paid_out_of_band' => 'true' ] );
+		}
 	}
 
 	/**
@@ -370,5 +406,91 @@ class WC_Pay_Dev_Billing_Renewal_Tester {
 		}
 
 		return self::$wcpay_subscription_cache[ $subscription->get_id() ];
+	}
+
+	/**
+	 * Records that event has been triggered so the next event can be set.
+	 *
+	 * @param WC_Subscription $subscription    The WC Subscription to set the next event for.
+	 * @param string          $triggered_event The event string. Should be either 'invoice.created', 'invoice.paid', or 'invoice.upcoming'.
+	 */
+	public static function record_event_trigger( $subscription, $triggered_event ) {
+		// Determine the next event from the triggered event.
+		switch ( $triggered_event ) {
+			case 'invoice.upcoming':
+				$next_event = 'invoice.created';
+				break;
+			case 'invoice.created':
+				$next_event = 'invoice.paid';
+				break;
+			case 'invoice.failed':
+				$next_event = 'failed.invoice.paid';
+
+				/**
+				 * When an invoice failed request is sent, it will require some manual interaction to pay it.
+				 *
+				 * Because that action is taken out of line of sight, we store a 15 second lock on the subscription.
+				 * While that lock is in place, the subscription will be stuck as thinking it has a failed invoice.
+				 * After that 15 seconds, it will start checking if the subscription has been paid.
+				 */
+				$subscription->update_meta_data( self::FAILED_TIMESTAMP_META_KEY, gmdate( 'U' ) );
+				$subscription->save();
+				break;
+			default:
+				$next_event = 'invoice.upcoming';
+				break;
+		}
+
+		self::set_next_event( $subscription, $next_event );
+	}
+
+	/**
+	 * Sets the next expected subscription event.
+	 *
+	 * @param WC_Subscription $subscription The WC Subscription to set the next event for.
+	 * @param string          $next_event   The next event string. Should be either 'invoice.created', 'invoice.paid', or 'invoice.upcoming'.
+	 */
+	public static function set_next_event( $subscription, $next_event ) {
+		$subscription->update_meta_data( self::NEXT_EVENT_META_KEY, $next_event );
+		$subscription->save();
+	}
+
+	/**
+	 * Gets the next event stored in subscription meta.
+	 *
+	 * @param WC_Subscription $subscription The WC Subscription to get hte next event for.
+	 * @return string The next event.
+	 */
+	public static function get_next_event( $subscription ) {
+		$next_event = $subscription->get_meta( self::NEXT_EVENT_META_KEY, true );
+
+		// If the next event is for a failed invoice to be paid, check if that invoice has been paid.
+		if ( 'failed.invoice.paid' === $next_event ) {
+			$has_lock = false;
+
+			if ( $subscription->meta_exists( self::FAILED_TIMESTAMP_META_KEY ) ) {
+				$locked_timestamp = $subscription->get_meta( self::FAILED_TIMESTAMP_META_KEY );
+
+				if ( ( $locked_timestamp + self::FAILED_INVOICE_LOCK_TIME ) > gmdate( 'U' ) ) {
+					// The lock is still in effect.
+					$has_lock = true;
+				} else {
+					// Delete the lock.
+					$subscription->delete_meta_data( self::FAILED_TIMESTAMP_META_KEY );
+					$subscription->save();
+				}
+			}
+
+			if ( ! $has_lock ) {
+				$wcpay_subscription = self::get_wcpay_subscription( $subscription );
+
+				if ( isset( $wcpay_subscription['status'] ) && 'past_due' !== $wcpay_subscription['status'] ) {
+					$next_event = 'invoice.upcoming';
+					self::set_next_event( $subscription, $next_event );
+				}
+			}
+		}
+
+		return $next_event;
 	}
 }
