@@ -138,7 +138,7 @@ class WC_Pay_Dev_Billing_Clock_Admin_Actions {
 	/**
 	 * Gets the next expected event from the WCPay/Stripe Subscription state.
 	 *
-	 * @param array $stripe_subscription The stripe subscripotion record.
+	 * @param array $stripe_subscription The stripe subscription record.
 	 * @param array $billing_clock       The stripe billing clock record.
 	 *
 	 * @return string The next event. Can be: 'invoice.paid', 'invoice.upcoming', 'invoice.created' or an empty string.
