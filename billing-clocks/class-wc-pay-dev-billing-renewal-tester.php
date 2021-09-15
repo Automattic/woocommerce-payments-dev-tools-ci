@@ -457,7 +457,7 @@ class WC_Pay_Dev_Billing_Renewal_Tester {
 	/**
 	 * Gets the next event stored in subscription meta.
 	 *
-	 * @param WC_Subscription $subscription The WC Subscription to get hte next event for.
+	 * @param WC_Subscription $subscription The WC Subscription to get the next event for.
 	 * @return string The next event.
 	 */
 	public static function get_next_event( $subscription ) {
