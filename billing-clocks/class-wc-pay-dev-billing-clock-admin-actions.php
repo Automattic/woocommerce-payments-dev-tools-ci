@@ -23,6 +23,8 @@ class WC_Pay_Dev_Billing_Clock_Admin_Actions {
 		add_action( 'woocommerce_order_action_wcpd_billing_clock_invoice_created', [ __CLASS__, 'progress_clock_to_invoice_created' ], 10, 1 );
 		add_action( 'woocommerce_order_action_wcpd_billing_clock_process_renewal', [ __CLASS__, 'progress_clock_to_process_renewal' ], 10, 1 );
 		add_action( 'woocommerce_order_action_wcpd_billing_clock_process_fail_renewal', [ __CLASS__, 'progress_clock_to_process_renewal' ], 10, 1 );
+
+		add_action( 'init', [ __CLASS__, 'handle_setup_request' ] );
 	}
 
 	/**
@@ -34,6 +36,19 @@ class WC_Pay_Dev_Billing_Clock_Admin_Actions {
 		$subscription_clock = WC_Pay_Dev_Billing_Renewal_Tester::get_subscription_clock( $subscription );
 
 		if ( ! $subscription_clock ) {
+			// Display a button users can click to set up the billing clock.
+			$query_args = [
+				'wcpd_billing_clock_action' => 'clock_set_up',
+				'subscription_id'           => $subscription->get_id(),
+			];
+
+			$setup_billing_clock_url = wp_nonce_url( add_query_arg( $query_args, admin_url() ), 'wcpd_billing_clock_action' );
+			$styles                  = "width: 100%; color: #5b841b; border-color: #5b841b; background: #c6e1c6; text-align: center; vertical-align: inherit;";
+			$enable_button           = "<a class='button' href='{$setup_billing_clock_url}' style='{$styles}'>Enable</a>";
+
+			echo '<hr><h3 style="text-align: center;">🛠 Dev Testing Mode: <span style="color: #dc9e10;">Disabled</span></h3>';
+			echo $enable_button;
+			echo '<hr>';
 			return;
 		}
 
@@ -43,14 +58,14 @@ class WC_Pay_Dev_Billing_Clock_Admin_Actions {
 			return;
 		}
 
-		echo '<hr><h3 style="text-align: center;">Custom Billing Clock</h3>';
+		echo '<hr><h3 style="text-align: center;">🛠 Dev Testing Mode: <span style="color: #5b841b">Enabled</span></h3>';
 
 		$account_id = WC_Pay_Dev_Billing_Clock_Client::get_account_id();
 
-		echo '<p>';
+		echo '<p style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">';
 		echo '<strong>Subscription:</strong>';
 		echo " <a style='font-family:monospace' href='https://dashboard.stripe.com/{$account_id}/test/subscriptions/{$stripe_subscription['id']}'>{$stripe_subscription['id']}</a>";
-
+		echo "</br>";
 		$format = 'M j, Y ' . wc_time_format();
 
 		echo '<strong>Clock time (GMT):</strong> ' . gmdate( $format, $subscription_clock['frozen_time'] );
@@ -72,11 +87,12 @@ class WC_Pay_Dev_Billing_Clock_Admin_Actions {
 			return;
 		} elseif ( $latest_invoice && isset( $latest_invoice['status'], $latest_invoice['id'] ) && 'draft' === $latest_invoice['status'] ) {
 			$invoice_id = $latest_invoice['id'];
-			$event      = "<a href='https://dashboard.stripe.com/{$account_id}/test/invoices/{$invoice_id}'>Invoice</a> payment";
+			echo "<p><strong>Next event:</strong> <a href='https://dashboard.stripe.com/{$account_id}/test/invoices/{$invoice_id}'>Invoice</a> payment</br>";
+		} else {
+			echo '<p><strong>Next event:</strong> <span style="font-family:monospace">' . $next_event . '</span></br>';
 		}
 
-		echo '<p><strong>Next event:</strong> <span style="font-family:monospace">' . $next_event . '</span></br>';
-
+		self::print_run_next_event_button( $subscription, $next_event );
 		echo "<sub>This is a best guess based on what the last event that was triggered.</sub>";
 		echo '<hr>';
 	}
@@ -99,7 +115,7 @@ class WC_Pay_Dev_Billing_Clock_Admin_Actions {
 
 		// If there's no clock. Add an action to set up the test.
 		if ( ! $subscription_clock ) {
-			$actions['wcpd_billing_clock_set_up'] = 'Set up custom billing clock';
+			$actions['wcpd_billing_clock_set_up'] = '🛠 Set up custom billing clock';
 			return $actions;
 		}
 
@@ -120,15 +136,15 @@ class WC_Pay_Dev_Billing_Clock_Admin_Actions {
 		// Add an action depending on what the next event should be.
 		switch ( WC_Pay_Dev_Billing_Renewal_Tester::get_next_event( $theorder ) ) {
 			case 'invoice.paid':
-				$actions['wcpd_billing_clock_process_renewal']      = 'Process latest invoice';
-				$actions['wcpd_billing_clock_process_fail_renewal'] = 'Fail the next invoice';
+				$actions['wcpd_billing_clock_process_renewal']      = '🛠 Process latest invoice';
+				$actions['wcpd_billing_clock_process_fail_renewal'] = '🛠 Fail the next invoice';
 				break;
 			case 'invoice.created':
-				$actions['wcpd_billing_clock_invoice_created'] = 'Trigger invoice creation';
+				$actions['wcpd_billing_clock_invoice_created'] = '🛠 Trigger invoice creation';
 				break;
 			case 'invoice.upcoming':
 			default:
-				$actions['wcpd_billing_clock_upcoming_invoice'] = 'Trigger upcoming invoice';
+				$actions['wcpd_billing_clock_upcoming_invoice'] = '🛠 Trigger upcoming invoice';
 				break;
 		}
 
@@ -346,5 +362,65 @@ class WC_Pay_Dev_Billing_Clock_Admin_Actions {
 		}
 
 		return true;
+	}
+
+	/**
+	 * Prints a button which when pressed will trigger the next event.
+	 *
+	 * @param WC_Subscription $subscription The subscription.
+	 * @param string          $next_event The subscription's next event.
+	 */
+	private static function print_run_next_event_button( $subscription, $next_event ) {
+
+		switch ( $next_event ) {
+			case 'invoice.upcoming':
+				$action = 'upcoming_invoice';
+				break;
+			case 'invoice.created':
+				$action = 'invoice_created';
+				break;
+			case 'invoice.paid':
+				// We need to print the failed renewal action too.
+				$query_args = [
+					'wcpd_billing_clock_action' => 'process_fail_renewal',
+					'subscription_id'           => $subscription->get_id(),
+				];
+
+				$setup_billing_clock_url = wp_nonce_url( add_query_arg( $query_args, admin_url() ), 'wcpd_billing_clock_action' );
+				$styles                  = "width: 100%; color: #761919; border-color: #761919; background: #eba3a3; text-align: center; vertical-align: inherit;";
+				echo "<p><a class='button' href='{$setup_billing_clock_url}' style='{$styles}'>⇪ Trigger <span style='font-weight: bold; font-family:monospace'>invoice.failed</span></a></p>";
+
+				$action = 'process_renewal';
+
+				break;
+			default:
+				return;
+		}
+
+		$query_args = [
+			'wcpd_billing_clock_action' => $action,
+			'subscription_id'           => $subscription->get_id(),
+		];
+
+		$setup_billing_clock_url = wp_nonce_url( add_query_arg( $query_args, admin_url() ), 'wcpd_billing_clock_action' );
+		$styles                  = "width: 100%; color: #5b841b; border-color: #5b841b; background: #c6e1c6; text-align: center; vertical-align: inherit;";
+		echo "<p><a class='button' href='{$setup_billing_clock_url}' style='{$styles}'>⇪ Trigger <span style='font-weight: bold; font-family:monospace'>{$next_event}</span></a></p>";
+	}
+
+	/**
+	 * Handle the request to trigger a billing clock event.
+	 */
+	public static function handle_setup_request() {
+		if ( isset( $_GET['wcpd_billing_clock_action'], $_GET['subscription_id'], $_GET['_wpnonce'] ) && check_admin_referer( 'wcpd_billing_clock_action' ) ) {
+			$subscription = wcs_get_subscription( absint( $_GET['subscription_id'] ) );
+
+			if ( $subscription ) {
+				// Trigger the relevent billing clock action and then redirect back to the edit subscription screen.
+				do_action( 'woocommerce_order_action_wcpd_billing_clock_' . wc_clean( $_GET['wcpd_billing_clock_action'] ), $subscription );
+				wp_safe_redirect( wcs_get_edit_post_link( $subscription->get_id() ) );
+				exit;
+			}
+
+		}
 	}
 }
