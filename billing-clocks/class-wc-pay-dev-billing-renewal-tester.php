@@ -236,7 +236,7 @@ class WC_Pay_Dev_Billing_Renewal_Tester {
 			array(
 				'type' => 'card',
 				'card' => array(
-					'number'    => 4000000000000341, // Successful card
+					'number'    => 4000000000000341, // Failed card.
 					'exp_month' => 1,
 					'exp_year'  => 2030,
 					'cvc'       => 123
