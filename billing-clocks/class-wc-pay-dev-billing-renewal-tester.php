@@ -67,12 +67,27 @@ class WC_Pay_Dev_Billing_Renewal_Tester {
 		self::$subscription_service = WC_Payments_Subscriptions::get_subscription_service();
 
 		if ( ! self::is_feature_enabled() ) {
+			add_action( 'admin_notices', [ __CLASS__, 'display_admin_notice' ] );
+
 			return;
 		}
 
 		// Edit Subscription Actions
 		require_once __DIR__ . '/class-wc-pay-dev-billing-clock-admin-actions.php';
 		WC_Pay_Dev_Billing_Clock_Admin_Actions::init();
+	}
+
+	/**
+	 * Displays an admin notice when the billing clock feature is enabled, but not available.
+	 */
+	public static function display_admin_notice() {
+		$notice = sprintf(
+			"The %sWCPay Subscriptions renewal testing feature%s is enabled but that feature is not available. Please ensure you have set your %s'Secret Test Key'%s and your account is eligible to use %sStripe's Billing Clock endpoints%s.",
+			'<strong>', '</strong>',
+			'<em>', '</em>',
+			'<a href="https://stripe.com/docs/api/billing_clocks">', '</a>'
+		);
+		echo "<div class='notice notice-error'><p>{$notice}</p></div>";
 	}
 
 	/**
