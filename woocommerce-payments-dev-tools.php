@@ -293,8 +293,6 @@ class WC_Payments_Dev_Tools {
 
 			self::clear_account_cache();
 
-			update_option( self::WCPAY_RELEASE_TAG, $_POST[ self::WCPAY_RELEASE_TAG ] ?? '' );
-
 			self::enable_or_remove_option_from_checkbox( self::BILLING_CLOCKS_OPTION );
 			update_option( self::BILLING_CLOCK_SECRET_KEY_OPTION, $_POST[ self::BILLING_CLOCK_SECRET_KEY_OPTION ] ?? '' );
 
