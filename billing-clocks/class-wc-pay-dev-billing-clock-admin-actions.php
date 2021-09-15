@@ -224,7 +224,7 @@ class WC_Pay_Dev_Billing_Clock_Admin_Actions {
 			$date  = wcs_get_datetime_from( $new_clock_time )->date_i18n( wc_date_format() . ' ' . wc_time_format() );
 
 			if ( ! $clock ) {
-				$subscription->add_order_note( "Upcoming invoice triggered. Error occured trying to advanced the Stripe Billing clock to 2 days prior to renewal - {$date}.{$clock->get_error_message()}." );
+				$subscription->add_order_note( "Upcoming invoice triggered. Error occured trying to advanced the Stripe Billing clock to 2 days prior to renewal - {$date}. {$clock->get_error_message()}." );
 			} else {
 				$subscription->add_order_note( "Upcoming invoice triggered. Advanced the Stripe Billing clock to 2 days prior to renewal - {$date}." );
 			}
