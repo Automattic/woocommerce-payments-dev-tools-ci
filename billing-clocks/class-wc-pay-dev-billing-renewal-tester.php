@@ -115,10 +115,9 @@ class WC_Pay_Dev_Billing_Renewal_Tester {
 	}
 
 	/**
-	 * Undocumented function
+	 * Gets a billing clock object.
 	 *
-	 * @param [type] $clock_id
-	 * @return void
+	 * @param string $clock_id The Billing Clock ID to retreive.
 	 */
 	public static function get_clock( $clock_id ) {
 		if ( ! isset( self::$wcpay_clock_cache[ $clock_id ] ) ) {
