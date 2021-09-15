@@ -24,7 +24,7 @@ class WC_Pay_Dev_Billing_Clock_Admin_Actions {
 		add_action( 'woocommerce_order_action_wcpd_billing_clock_process_renewal', [ __CLASS__, 'progress_clock_to_process_renewal' ], 10, 1 );
 		add_action( 'woocommerce_order_action_wcpd_billing_clock_process_fail_renewal', [ __CLASS__, 'progress_clock_to_process_renewal' ], 10, 1 );
 
-		add_action( 'init', [ __CLASS__, 'handle_setup_request' ] );
+		add_action( 'init', [ __CLASS__, 'handle_action_request' ] );
 	}
 
 	/**
@@ -410,7 +410,7 @@ class WC_Pay_Dev_Billing_Clock_Admin_Actions {
 	/**
 	 * Handle the request to trigger a billing clock event.
 	 */
-	public static function handle_setup_request() {
+	public static function handle_action_request() {
 		if ( isset( $_GET['wcpd_billing_clock_action'], $_GET['subscription_id'], $_GET['_wpnonce'] ) && check_admin_referer( 'wcpd_billing_clock_action' ) ) {
 			$subscription = wcs_get_subscription( absint( $_GET['subscription_id'] ) );
 
