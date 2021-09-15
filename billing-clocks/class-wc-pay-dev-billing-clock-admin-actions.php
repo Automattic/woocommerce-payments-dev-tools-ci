@@ -95,9 +95,6 @@ class WC_Pay_Dev_Billing_Clock_Admin_Actions {
 			return $actions;
 		}
 
-		// Remove the default renewal processing actions.
-		unset( $actions['wcs_process_renewal'], $actions['wcs_create_pending_renewal'], $actions['wcs_create_pending_parent'] );
-
 		$subscription_clock = WC_Pay_Dev_Billing_Renewal_Tester::get_subscription_clock( $theorder );
 
 		// If there's no clock. Add an action to set up the test.
@@ -105,6 +102,9 @@ class WC_Pay_Dev_Billing_Clock_Admin_Actions {
 			$actions['wcpd_billing_clock_set_up'] = 'Set up custom billing clock';
 			return $actions;
 		}
+
+		// Remove the default renewal processing actions.
+		unset( $actions['wcs_process_renewal'], $actions['wcs_create_pending_renewal'], $actions['wcs_create_pending_parent'] );
 
 		$stripe_subscription = WC_Pay_Dev_Billing_Renewal_Tester::get_wcpay_subscription( $theorder );
 
