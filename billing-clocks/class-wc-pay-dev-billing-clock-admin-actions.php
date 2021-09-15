@@ -221,7 +221,7 @@ class WC_Pay_Dev_Billing_Clock_Admin_Actions {
 
 			// Move the billing clock to be half an hour before the next payment.
 			$clock = WC_Pay_Dev_Billing_Renewal_Tester::advance_clock( $subscription_clock['id'], $new_clock_time );
-			$date  = wcs_get_datetime_from( $new_clock_time )->date_i18n( wc_date_format(). ' ' . wc_time_format() );
+			$date  = wcs_get_datetime_from( $new_clock_time )->date_i18n( wc_date_format() . ' ' . wc_time_format() );
 
 			if ( ! $clock ) {
 				$subscription->add_order_note( "Upcoming invoice triggered. Error occured trying to advanced the Stripe Billing clock to 2 days prior to renewal - {$date}.{$clock->get_error_message()}." );
