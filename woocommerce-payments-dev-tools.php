@@ -419,7 +419,7 @@ class WC_Payments_Dev_Tools {
 					</select>
 				</p>
 				<p>
-					<?php self::render_checkbox( self::BILLING_CLOCKS_OPTION, 'Billing clocks (WCPay Subscriptions renewal testing)', false ); ?>
+					<?php self::render_checkbox( self::BILLING_CLOCKS_OPTION, 'WCPay Subscriptions renewal testing (Billing clocks)', false ); ?>
 					<label for="wcpay_billing_clock_secret">WC Pay Secret Test Key</label>
 					<input
 							type="text"
@@ -511,6 +511,10 @@ class WC_Payments_Dev_Tools {
 
 		if ( get_option( self::WCPAY_RELEASE_TAG, true ) ) {
 			$enabled_options[] = 'WCPay plugin installation will use release ' . self::get_wcpay_release_tag();
+		}
+
+		if ( get_option( self::BILLING_CLOCKS_OPTION, true ) ) {
+			$enabled_options[] = 'WCPay Subscription renewal testing';
 		}
 
 		if ( empty( $enabled_options ) ) {
