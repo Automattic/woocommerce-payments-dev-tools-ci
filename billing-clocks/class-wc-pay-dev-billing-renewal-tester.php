@@ -372,27 +372,6 @@ class WC_Pay_Dev_Billing_Renewal_Tester {
 	}
 
 	/**
-	 * Attempts to get the billing clock customer from a subscription if there's a specific event.
-	 * eg Changing a payment method.
-	 *
-	 * @return void
-	 */
-	public static function maybe_get_billing_clock_wcpay_customer_from_event( $value ) {
-		global $wp;
-		$subscription = null;
-
-		if ( isset( $wp->query_vars['order-pay'] ) && class_exists( 'WC_Subscriptions_Change_Payment_Gateway' ) && WC_Subscriptions_Change_Payment_Gateway::$is_request_to_change_payment ) {
-			$subscription = wcs_get_subscription( absint( $wp->query_vars['order-pay'] ) );
-		}
-
-		if ( $subscription && $subscription->meta_exists( '_wcsbrt_billing_clock_customer_id' ) ) {
-			return $subscription->get_meta( '_wcsbrt_billing_clock_customer_id', true );
-		} else {
-			return $value;
-		}
-	}
-
-	/**
 	 * Gets the WCPay Subscription from a WC Subscription.
 	 *
 	 * @param WC_Subscription $subscription
