@@ -2,7 +2,7 @@
 /**
  * A class for adding and handling subscription actions to interact with the billing clock.
  *
- * @package WC_Pay_Dev_Billing_Renewal_Tester
+ * @package WC_Pay_Dev_Billing_Clock_Admin_Actions
  */
 
 defined( 'ABSPATH' ) || exit;
