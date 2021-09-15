@@ -15,7 +15,7 @@ class WC_Pay_Dev_Billing_Renewal_Tester {
 	const NEXT_EVENT_META_KEY = '_wcpay_dbc_next_event';
 
 	/**
-	 * After sending a request to fail an invoice payment, we store the timestamp so it is locked as failed/
+	 * After sending a request to fail an invoice payment, we store the timestamp so it is locked as failed.
 	 *
 	 * This lock remains inplace for @see FAILED_INVOICE_LOCK_TIME number of seconds - enough time for Stripe to have processed the fail request.
 	 */
