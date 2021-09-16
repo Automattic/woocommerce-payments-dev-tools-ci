@@ -22,7 +22,8 @@ class WC_Payments_Dev_Tools {
 	public const PROXY_VIA_OPTION = 'wcpaydev_proxy_via';
 	public const DISPLAY_NOTICE = 'wcpaydev_display_notice';
 	public const WCPAY_RELEASE_TAG = 'wcpaydev_wcpay_release_tag';
-
+	public const BILLING_CLOCKS_OPTION = 'wcpaydev_wcpay_billing_clock';
+	public const BILLING_CLOCK_SECRET_KEY_OPTION = 'wcpay_billing_clock_secret';
 
 	/**
 	 * Helpers for GitHub access
@@ -50,6 +51,11 @@ class WC_Payments_Dev_Tools {
 		add_filter( 'wcpay_api_request_headers', [ __CLASS__, 'add_wcpay_request_headers' ], 10, 1 );
 		add_filter( 'upgrader_pre_download', [ __CLASS__, 'maybe_override_wcpay_version' ], 10, 4 );
 		add_action( 'init', [ __CLASS__, 'maybe_force_disconnected' ] );
+
+		if ( class_exists( 'WC_Payments_Subscriptions' ) && get_option( self::BILLING_CLOCKS_OPTION, false ) ) {
+			require_once 'billing-clocks/class-wc-pay-dev-billing-renewal-tester.php';
+			WC_Pay_Dev_Billing_Renewal_Tester::init();
+		}
 	}
 
 	/**
@@ -287,6 +293,9 @@ class WC_Payments_Dev_Tools {
 
 			self::clear_account_cache();
 
+			self::enable_or_remove_option_from_checkbox( self::BILLING_CLOCKS_OPTION );
+			update_option( self::BILLING_CLOCK_SECRET_KEY_OPTION, $_POST[ self::BILLING_CLOCK_SECRET_KEY_OPTION ] ?? '' );
+
 			wp_safe_redirect( self::get_settings_url() );
 		}
 	}
@@ -410,6 +419,17 @@ class WC_Payments_Dev_Tools {
 					</select>
 				</p>
 				<p>
+					<?php self::render_checkbox( self::BILLING_CLOCKS_OPTION, 'WCPay Subscriptions renewal testing (Billing clocks)', false ); ?>
+					<label for="wcpay_billing_clock_secret">WC Pay Secret Test Key</label>
+					<input
+							type="text"
+							id="<?php echo esc_attr( self::BILLING_CLOCK_SECRET_KEY_OPTION ) ?>"
+							name="<?php echo esc_attr( self::BILLING_CLOCK_SECRET_KEY_OPTION ) ?>"
+							value="<?php echo esc_html( get_option( self::BILLING_CLOCK_SECRET_KEY_OPTION, '' ) ) ?>"
+						/>
+					<small>(required for using billing clocks)</small>
+				</p>
+				<p>
 					<input type="submit" value="Submit" />
 				</p>
 			</form>
@@ -491,6 +511,10 @@ class WC_Payments_Dev_Tools {
 
 		if ( get_option( self::WCPAY_RELEASE_TAG, true ) ) {
 			$enabled_options[] = 'WCPay plugin installation will use release ' . self::get_wcpay_release_tag();
+		}
+
+		if ( get_option( self::BILLING_CLOCKS_OPTION, true ) ) {
+			$enabled_options[] = 'WCPay Subscription renewal testing';
 		}
 
 		if ( empty( $enabled_options ) ) {
