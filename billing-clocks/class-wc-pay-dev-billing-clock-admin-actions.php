@@ -254,7 +254,7 @@ class WC_Pay_Dev_Billing_Clock_Admin_Actions {
 	 *
 	 * @param WC_Subscription $subscription
 	 */
-	public static function progress_clock_to_invoice_created( $subscription ){
+	public static function progress_clock_to_invoice_created( $subscription ) {
 
 		if ( ! self::validate_triggering_event( $subscription, 'invoice.created' ) ) {
 			return;
