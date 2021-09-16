@@ -268,10 +268,10 @@ class WC_Pay_Dev_Billing_Clock_Admin_Actions {
 
 			// Move the billing clock to the next payment date.
 			$clock = WC_Pay_Dev_Billing_Renewal_Tester::advance_clock( $subscription_clock['id'], $next_payment_time );
-			$date  = wcs_get_datetime_from( $next_payment_time )->date_i18n( wc_date_format(). ' ' . wc_time_format() );
+			$date  = wcs_get_datetime_from( $next_payment_time )->date_i18n( wc_date_format() . ' ' . wc_time_format() );
 
 			if ( ! $clock ) {
-				$subscription->add_order_note( "Invoice creation triggered. Error occured trying to advanced the Stripe Billing clock to the next payment (current_period_end) {$date}.{$clock->get_error_message()}." );
+				$subscription->add_order_note( "Invoice creation triggered. Error occured trying to advanced the Stripe Billing clock to the next payment (current_period_end) {$date}. {$clock->get_error_message()}." );
 			} else {
 				$subscription->add_order_note( "Invoice creation triggered. Advanced the Stripe Billing clock to the next payment (current_period_end) {$date}." );
 			}
@@ -302,10 +302,10 @@ class WC_Pay_Dev_Billing_Clock_Admin_Actions {
 		$clock = WC_Pay_Dev_Billing_Renewal_Tester::advance_clock( $subscription_clock['id'], $invoice['next_payment_attempt'] + MINUTE_IN_SECONDS );
 
 		if ( is_wp_error( $clock ) ) {
-			$date = wcs_get_datetime_from( $stripe_subscription['current_period_end'] )->date_i18n( wc_date_format(). ' ' . wc_time_format() );
-			$subscription->add_order_note( ucfirst( $payment_type ) . " latest invoice triggered. Error occured trying to advanced the Stripe Billing clock to invoice date: {$date}.{$clock->get_error_message()}." );
+			$date = wcs_get_datetime_from( $stripe_subscription['current_period_end'] )->date_i18n( wc_date_format() . ' ' . wc_time_format() );
+			$subscription->add_order_note( ucfirst( $payment_type ) . " latest invoice triggered. Error occured trying to advanced the Stripe Billing clock to invoice date: {$date}. {$clock->get_error_message()}." );
 		} else {
-			$date = wcs_get_datetime_from( $clock['frozen_time'] )->date_i18n( wc_date_format(). ' ' . wc_time_format() );
+			$date = wcs_get_datetime_from( $clock['frozen_time'] )->date_i18n( wc_date_format() . ' ' . wc_time_format() );
 			$subscription->add_order_note( ucfirst( $payment_type ) . " latest invoice triggered. Advanced the Stripe Billing clock to invoice date: {$date}." );
 		}
 
@@ -319,7 +319,7 @@ class WC_Pay_Dev_Billing_Clock_Admin_Actions {
 	/**
 	 * Validate that the subscription is valid to trigger a given event.
 	 *
-	 * @param WC_Subscription $subscription The WC Subscription we're validating a event for.
+	 * @param WC_Subscription $subscription The WC Subscription we're validating an event for.
 	 * @param string          $event        The event being triggered.
 	 *
 	 * @return bool Whether the event is valid or not.
