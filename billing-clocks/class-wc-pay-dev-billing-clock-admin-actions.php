@@ -38,7 +38,7 @@ class WC_Pay_Dev_Billing_Clock_Admin_Actions {
 		if ( ! $subscription_clock ) {
 			// Display a button users can click to set up the billing clock.
 			$query_args = [
-				'wcpd_billing_clock_action' => 'clock_set_up',
+				'wcpd_billing_clock_action' => 'set_up',
 				'subscription_id'           => $subscription->get_id(),
 			];
 
