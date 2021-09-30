@@ -24,6 +24,7 @@ class WC_Payments_Dev_Tools {
 	public const WCPAY_RELEASE_TAG = 'wcpaydev_wcpay_release_tag';
 	public const BILLING_CLOCKS_OPTION = 'wcpaydev_wcpay_billing_clock';
 	public const BILLING_CLOCK_SECRET_KEY_OPTION = 'wcpay_billing_clock_secret';
+	public const SUBSCRIPTIONS = '_wcpay_feature_subscriptions';
 
 	/**
 	 * Helpers for GitHub access
@@ -280,6 +281,7 @@ class WC_Payments_Dev_Tools {
 			self::enable_or_remove_option_from_checkbox( self::ACCOUNT_TASK_LIST );
 			self::enable_or_remove_option_from_checkbox( self::UPE );
 			self::enable_or_remove_option_from_checkbox( self::UPE_ADDITIONAL_PAYMENT_METHODS );
+			self::enable_or_remove_option_from_checkbox( self::SUBSCRIPTIONS );
 			self::update_option_from_checkbox( self::REDIRECT_OPTION );
 			if ( isset( $_POST[ self::REDIRECT_TO_OPTION ] ) ) {
 				update_option( self::REDIRECT_TO_OPTION, $_POST[ self::REDIRECT_TO_OPTION ] );
@@ -369,6 +371,7 @@ class WC_Payments_Dev_Tools {
 				$has_upe_been_manually_disabled_text = 'disabled' === get_option( self::UPE ) ? ' (was disabled through WCPay, un-check to reset or save to re-enable)' : '';
 				self::render_checkbox( self::UPE, "Enable UPE checkout{$has_upe_been_manually_disabled_text}" );
 				self::render_checkbox( self::UPE_ADDITIONAL_PAYMENT_METHODS, 'Add UPE additional payment methods' );
+				self::render_checkbox( self::SUBSCRIPTIONS, 'Enable WCPay subscriptions' );
 				self::render_checkbox( self::REDIRECT_OPTION, 'Enable API request redirection' );
 				?>
 				<p>
@@ -495,6 +498,10 @@ class WC_Payments_Dev_Tools {
 
 		if ( get_option( self::UPE_ADDITIONAL_PAYMENT_METHODS, false ) ) {
 			$enabled_options[] = 'UPE additional payment methods enabled';
+		}
+
+		if ( get_option( self::SUBSCRIPTIONS, false ) ) {
+			$enabled_options[] = 'WCPay subscriptions enabled';
 		}
 
 		if ( get_option( self::FORCE_ONBOARDING_OPTION, false ) ) {
