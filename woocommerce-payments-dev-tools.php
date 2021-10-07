@@ -204,6 +204,10 @@ class WC_Payments_Dev_Tools {
 			return;
 		}
 
+		if ( ! class_exists( 'WC_Payments_Account' ) ) {
+			return;
+		}
+
 		update_option(
 		        WC_Payments_Account::ACCOUNT_OPTION,
                 [
