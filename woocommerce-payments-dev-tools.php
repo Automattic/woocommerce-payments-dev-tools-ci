@@ -275,6 +275,14 @@ class WC_Payments_Dev_Tools {
 			wp_safe_redirect( self::get_settings_url() );
 		}
 
+		if ( isset( $_GET['wcpaydev-update-rates'] ) ) {
+			check_admin_referer( 'wcpaydev-update-rates' );
+
+			self::update_enabled_currency_rates();
+
+			wp_safe_redirect( self::get_settings_url() );
+		}
+
 		if ( isset( $_POST['wcpaydev-save-settings'] ) ) {
 			check_admin_referer( 'wcpaydev-save-settings', 'wcpaydev-save-settings' );
 
@@ -458,6 +466,9 @@ class WC_Payments_Dev_Tools {
 				<h2><a href="<?php echo wp_nonce_url( add_query_arg( [ 'wcpaydev-clear-notes' => '1' ], self::get_settings_url() ), 'wcpaydev-clear-notes' ); ?>">Delete all WCPay inbox notes</a></h2>
 			</p>
 			<p>
+				<h2><a href="<?php echo wp_nonce_url( add_query_arg( [ 'wcpaydev-update-rates' => '1' ], self::get_settings_url() ), 'wcpaydev-update-rates' ); ?>">Update enabled currency rates</a></h2>
+			</p>
+			<p>
 				<h2><a href="<?php echo wp_nonce_url( add_query_arg( [ 'wcpay-connect' => '1' ], WC_Payment_Gateway_WCPay::get_settings_url() ), 'wcpay-connect' ) ?>">Reonboard</a></h2>
 			</p>
 			<p>
@@ -581,6 +592,24 @@ class WC_Payments_Dev_Tools {
 			return;
 		}
 		delete_option( WC_Payments_Account::ACCOUNT_OPTION );
+	}
+
+	/**
+	 * Updates the rates from the live server
+	 */
+	private static function update_enabled_currency_rates() {
+		if ( ! function_exists( 'WC_Payments_Multi_Currency' ) ) {
+			return;
+		}
+		$proxy_status = get_option( self::PROXY_OPTION, '0' );
+		$api_redirection = get_option( self::REDIRECT_OPTION );
+		update_option( self::PROXY_OPTION, '0' );
+		update_option( self::REDIRECT_OPTION, '0' );
+		$multi_currency = WC_Payments_Multi_Currency();
+		$multi_currency->clear_cache();
+		$multi_currency->get_cached_currencies();
+		update_option( self::PROXY_OPTION, $proxy_status );
+		update_option( self::REDIRECT_OPTION, $api_redirection );
 	}
 
 	/**
