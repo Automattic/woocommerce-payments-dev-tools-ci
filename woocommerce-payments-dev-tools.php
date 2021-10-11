@@ -275,6 +275,14 @@ class WC_Payments_Dev_Tools {
 			wp_safe_redirect( self::get_settings_url() );
 		}
 
+		if ( isset( $_GET['wcpaydev-fetch-live-rates'] ) ) {
+			check_admin_referer( 'wcpaydev-fetch-live-rates' );
+
+			self::fetch_live_rates_from_server();
+
+			wp_safe_redirect( self::get_settings_url() );
+		}
+
 		if ( isset( $_POST['wcpaydev-save-settings'] ) ) {
 			check_admin_referer( 'wcpaydev-save-settings', 'wcpaydev-save-settings' );
 
@@ -458,6 +466,9 @@ class WC_Payments_Dev_Tools {
 				<h2><a href="<?php echo wp_nonce_url( add_query_arg( [ 'wcpaydev-clear-notes' => '1' ], self::get_settings_url() ), 'wcpaydev-clear-notes' ); ?>">Delete all WCPay inbox notes</a></h2>
 			</p>
 			<p>
+				<h2><a href="<?php echo wp_nonce_url( add_query_arg( [ 'wcpaydev-fetch-live-rates' => '1' ], self::get_settings_url() ), 'wcpaydev-fetch-live-rates' ); ?>">Fetch live currency rates</a></h2>
+			</p>
+			<p>
 				<h2><a href="<?php echo wp_nonce_url( add_query_arg( [ 'wcpay-connect' => '1' ], WC_Payment_Gateway_WCPay::get_settings_url() ), 'wcpay-connect' ) ?>">Reonboard</a></h2>
 			</p>
 			<p>
@@ -581,6 +592,31 @@ class WC_Payments_Dev_Tools {
 			return;
 		}
 		delete_option( WC_Payments_Account::ACCOUNT_OPTION );
+	}
+
+	/**
+	 * Updates the rates from the live server
+	 */
+	private static function fetch_live_rates_from_server() {
+		// If Multi-currency isn't loaded, skip this.
+		if ( ! function_exists( 'WC_Payments_Multi_Currency' ) ) {
+			return;
+		}
+		
+		// Store previous settings to variables.
+		$proxy_status = get_option( self::PROXY_OPTION, '0' );
+		$api_redirection = get_option( self::REDIRECT_OPTION, '0' );
+		update_option( self::PROXY_OPTION, '0' );
+		update_option( self::REDIRECT_OPTION, '0' );
+		
+		// Do the live fetch.
+		$multi_currency = WC_Payments_Multi_Currency();
+		$multi_currency->clear_cache();
+		$multi_currency->get_cached_currencies();
+		
+		// Revert back the settings.
+		update_option( self::PROXY_OPTION, $proxy_status );
+		update_option( self::REDIRECT_OPTION, $api_redirection );
 	}
 
 	/**
