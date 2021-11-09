@@ -13,6 +13,11 @@ class WC_Payments_Dev_Tools_CLI extends WP_CLI_Command {
 	 * <blog_id>
 	 * : The blog ID.
 	 *
+	 * [--blog_token=<value>]
+     * : Jetpack blog token.
+	 *
+	 * [--user_token=<value>]
+     * : Jetpack user token
 	 * ---
 	 *
 	 * ## EXAMPLES
@@ -31,10 +36,15 @@ class WC_Payments_Dev_Tools_CLI extends WP_CLI_Command {
 			return 1;
 		}
 
+		$blog_token = ! empty( $assoc_args['blog_token'] ) ? $assoc_args['blog_token'] : '123.ABC';
+		$user_token = array(
+			1 => ! empty( $assoc_args['user_token'] ) ? $assoc_args['user_token'] : '123.ABC.1',
+		);
+
 		Jetpack_Options::update_option( 'id', intval( $blog_id ) );
 		Jetpack_Options::update_option( 'master_user', 1 );
-		Jetpack_Options::update_option( 'blog_token', '123.ABC' );
-		Jetpack_Options::update_option( 'user_tokens', [ 1 => '123.ABC.1' ] );
+		Jetpack_Options::update_option( 'blog_token', $blog_token );
+		Jetpack_Options::update_option( 'user_tokens', $user_token );
 
 		WP_CLI::success( "Set Jetpack blog id to $blog_id" );
 	}
