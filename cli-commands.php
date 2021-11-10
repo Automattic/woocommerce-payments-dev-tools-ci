@@ -14,10 +14,10 @@ class WC_Payments_Dev_Tools_CLI extends WP_CLI_Command {
 	 * : The blog ID.
 	 *
 	 * [--blog_token=<value>]
-     * : Jetpack blog token.
+     * : Jetpack blog token. Values should be wrapped in quotes.
 	 *
 	 * [--user_token=<value>]
-     * : Jetpack user token
+     * : Jetpack user token. Values should be wrapped in quotes.
 	 * ---
 	 *
 	 * ## EXAMPLES
