@@ -22,7 +22,11 @@ class WC_Payments_Dev_Tools_CLI extends WP_CLI_Command {
 	 *
 	 * ## EXAMPLES
 	 *
+	 *     # Update Blog ID
 	 *     wp wcpay_dev set_blog_id <blog_id>
+	 *
+	 *     # Update Blog ID with blog & user tokens
+	 *     wp wcpay_dev set_blog_id <blog_id> --blog_token=<value> --user_token=<value>
 	 */
 	public function set_blog_id( $args, $assoc_args ) {
 		$blog_id = $args[0];
