@@ -154,6 +154,7 @@ class WC_Payments_Dev_Tools {
 
 	/**
 	 * If enabled, sets *only* the *.wordpress.com requests to be sent via the a8c proxy.
+	 * Works only if cURL is used as a method of HTTP transport.
 	 *
 	 * @return void
 	 */
