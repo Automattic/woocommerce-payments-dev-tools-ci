@@ -40,7 +40,7 @@ class WC_Payments_Dev_Tools {
 	 * Entry point of the plugin
 	 */
 	public static function init() {
-		self::maybe_set_proxy();
+		add_action( 'http_api_curl', [ __CLASS__, 'maybe_proxy_wpcom_request' ], 10, 3 );
 
 		add_action( 'admin_menu', [ __CLASS__, 'add_admin_page' ] );
 		add_action( 'admin_notices', [ __CLASS__, 'add_notices' ] );
@@ -157,21 +157,29 @@ class WC_Payments_Dev_Tools {
 	 *
 	 * @return void
 	 */
-	public static function maybe_set_proxy() {
+	public static function maybe_proxy_wpcom_request( &$handle, $parsed_args, $url ) {
+		// Return early if the proxy option is disabled
 		if ( ! get_option( self::PROXY_OPTION, true ) ) {
 			return;
 		}
 
-		$proxy = untrailingslashit( self::get_proxy_via() );
-		if ( 1 !== preg_match( '/(.+):(\d+)/', $proxy, $matches ) ) {
+		// Return early if the request is not for wpcom
+		if ( 1 !== preg_match( '/^(https?:\/\/)?([^\/]+\.)?wordpress.com/', $url ) ) {
 			return;
 		}
 
-		define( 'WP_PROXY_HOST', $matches[1] );
-		define( 'WP_PROXY_PORT', $matches[2] );
-		add_filter( 'pre_http_send_through_proxy', function( $_, $uri, $check, $home ) {
-			return 1 === preg_match( '/.*wordpress.com/', $check['host'] );
-		}, 10, 4 );
+		// Return early if the proxy url can't be parsed.
+		$proxy = untrailingslashit( self::get_proxy_via() );
+		if ( 1 !== preg_match( '/(.+):(\d+)/', $proxy, $proxy_matches ) ) {
+			return;
+		}
+
+		$proxy_host = $proxy_matches[1];
+		$proxy_port = $proxy_matches[2];
+
+		curl_setopt( $handle, CURLOPT_PROXYTYPE, CURLPROXY_HTTP );
+		curl_setopt( $handle, CURLOPT_PROXY, $proxy_host );
+		curl_setopt( $handle, CURLOPT_PROXYPORT, $proxy_port );
 	}
 
 	/**
@@ -602,18 +610,18 @@ class WC_Payments_Dev_Tools {
 		if ( ! function_exists( 'WC_Payments_Multi_Currency' ) ) {
 			return;
 		}
-		
+
 		// Store previous settings to variables.
 		$proxy_status = get_option( self::PROXY_OPTION, '0' );
 		$api_redirection = get_option( self::REDIRECT_OPTION, '0' );
 		update_option( self::PROXY_OPTION, '0' );
 		update_option( self::REDIRECT_OPTION, '0' );
-		
+
 		// Do the live fetch.
 		$multi_currency = WC_Payments_Multi_Currency();
 		$multi_currency->clear_cache();
 		$multi_currency->get_cached_currencies();
-		
+
 		// Revert back the settings.
 		update_option( self::PROXY_OPTION, $proxy_status );
 		update_option( self::REDIRECT_OPTION, $api_redirection );
