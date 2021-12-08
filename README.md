@@ -2,6 +2,8 @@
 
 A suite of tools helpful when developing WooCommerce Payments.
 
+**Note:** This is a development tool and **should not** be used on production WooCommerce stores.
+
 ## How to use
 
 - From the [Code tab](https://github.com/Automattic/woocommerce-payments-dev-tools), click on the Code button to expose a dropdown. This will open a small drop down menu. Select `Download ZIP` from that menu and save it somewhere convenient.
