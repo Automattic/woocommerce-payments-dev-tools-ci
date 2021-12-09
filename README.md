@@ -51,7 +51,7 @@ To process a renewal, there is a 3 step process involving upcoming invoice, invo
      - fail the renewal payment with **⇪ Trigger `invoice.failed`**. _Note: to fail the renewal order we set the subscription's default payment method to a card with a failing card number (`4000000000000341`)_.
 4. Click one of the options.
 5. Wait and possibly reload the page depending on how long the requests take to process on either end.
-6. The latest renewal invoice should then process as expected, depending on which option you chose. _Note: You will need to be receiving webhooks in order to create renewal orders. See [this guide](https://github.com/Automattic/woocommerce-payments-server/tree/trunk/local#5-listen-to-webhooks) for steps on how to redirect webhooks if you're testing locally._
+6. The latest renewal invoice should then process as expected, depending on which option you chose. _Note: You will need to be receiving webhooks in order to create renewal orders. See the "Listen to webhooks" section in the server repo readme for steps on how to redirect webhooks if you're testing locally._
 
 <img width="292" alt="Screen Shot 2021-09-16 at 10 37 12 am" src="https://user-images.githubusercontent.com/8490476/133530852-196a7c45-2cda-43e8-8910-306fb8e0e6d6.png">
 
