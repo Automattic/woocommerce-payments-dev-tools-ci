@@ -346,7 +346,7 @@ class WC_Payments_Dev_Tools {
 	 * @param string $label
 	 * @param bool   $default
 	 */
-	private static function render_checkbox( $option_name, $label, $default = false ) {
+	private static function render_checkbox( $option_name, $label, $default = false, $description = '' ) {
 		?>
 		<p>
 			<input
@@ -358,6 +358,11 @@ class WC_Payments_Dev_Tools {
 			<label for="<?php echo( $option_name ) ?>">
 				<?php echo( $label ) ?>
 			</label>
+			<?php
+			  if ( !empty( $description ) ) {
+				echo "<small>" . $description . "</small>";
+			}
+			?>
 		</p>
 		<?php
 	}
@@ -376,12 +381,12 @@ class WC_Payments_Dev_Tools {
 				<?php
 				wp_nonce_field( 'wcpaydev-save-settings', 'wcpaydev-save-settings' );
 				self::render_checkbox( self::DEV_MODE_OPTION, 'Dev mode enabled', true );
-				self::render_checkbox( self::FORCE_ONBOARDING_OPTION, 'Force onboarding' );
+				self::render_checkbox( self::FORCE_ONBOARDING_OPTION, 'Force onboarding', false, '(Check this to trigger the KYC flow when clicking on the ‘Reonboard’ link below)' );
 				self::render_checkbox( self::FORCE_DISCONNECTED_OPTION, 'Force the plugin to act as disconnected from WCPay' );
 				self::render_checkbox( self::ACCOUNT_TASK_LIST, 'Enable account overview task list' );
 				self::render_checkbox( self::GROUPED_SETTINGS, 'Enable grouped settings' );
 				$has_upe_been_manually_disabled_text = 'disabled' === get_option( self::UPE ) ? ' (was disabled through WCPay, un-check to reset or save to re-enable)' : '';
-				self::render_checkbox( self::UPE, "Enable UPE checkout{$has_upe_been_manually_disabled_text}" );
+				self::render_checkbox( self::UPE, "Enable UPE checkout", false, $has_upe_been_manually_disabled_text );
 				self::render_checkbox( self::UPE_ADDITIONAL_PAYMENT_METHODS, 'Add UPE additional payment methods' );
 				self::render_checkbox( self::SUBSCRIPTIONS, 'Enable WCPay subscriptions' );
 				self::render_checkbox( self::REDIRECT_OPTION, 'Enable API request redirection' );
