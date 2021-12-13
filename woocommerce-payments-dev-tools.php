@@ -17,6 +17,7 @@ class WC_Payments_Dev_Tools {
 	public const ACCOUNT_TASK_LIST = '_wcpay_feature_account_overview_task_list';
 	public const UPE = '_wcpay_feature_upe';
 	public const UPE_ADDITIONAL_PAYMENT_METHODS = '_wcpay_feature_upe_additional_payment_methods';
+	public const PLATFORM_CHECKOUT = '_wcpay_feature_platform_checkout';
 	public const REDIRECT_TO_OPTION = 'wcpaydev_redirect_to';
 	public const PROXY_OPTION = 'wcpaydev_proxy';
 	public const PROXY_VIA_OPTION = 'wcpaydev_proxy_via';
@@ -294,6 +295,7 @@ class WC_Payments_Dev_Tools {
 			self::enable_or_remove_option_from_checkbox( self::UPE );
 			self::enable_or_remove_option_from_checkbox( self::UPE_ADDITIONAL_PAYMENT_METHODS );
 			self::enable_or_remove_option_from_checkbox( self::SUBSCRIPTIONS );
+			self::enable_or_remove_option_from_checkbox( self::PLATFORM_CHECKOUT );
 			self::update_option_from_checkbox( self::REDIRECT_OPTION );
 			if ( isset( $_POST[ self::REDIRECT_TO_OPTION ] ) ) {
 				update_option( self::REDIRECT_TO_OPTION, $_POST[ self::REDIRECT_TO_OPTION ] );
@@ -384,6 +386,7 @@ class WC_Payments_Dev_Tools {
 				self::render_checkbox( self::UPE, "Enable UPE checkout{$has_upe_been_manually_disabled_text}" );
 				self::render_checkbox( self::UPE_ADDITIONAL_PAYMENT_METHODS, 'Add UPE additional payment methods' );
 				self::render_checkbox( self::SUBSCRIPTIONS, 'Enable WCPay subscriptions' );
+				self::render_checkbox( self::PLATFORM_CHECKOUT, 'Enable platform checkout support' );
 				self::render_checkbox( self::REDIRECT_OPTION, 'Enable API request redirection' );
 				?>
 				<p>
@@ -602,18 +605,18 @@ class WC_Payments_Dev_Tools {
 		if ( ! function_exists( 'WC_Payments_Multi_Currency' ) ) {
 			return;
 		}
-		
+
 		// Store previous settings to variables.
 		$proxy_status = get_option( self::PROXY_OPTION, '0' );
 		$api_redirection = get_option( self::REDIRECT_OPTION, '0' );
 		update_option( self::PROXY_OPTION, '0' );
 		update_option( self::REDIRECT_OPTION, '0' );
-		
+
 		// Do the live fetch.
 		$multi_currency = WC_Payments_Multi_Currency();
 		$multi_currency->clear_cache();
 		$multi_currency->get_cached_currencies();
-		
+
 		// Revert back the settings.
 		update_option( self::PROXY_OPTION, $proxy_status );
 		update_option( self::REDIRECT_OPTION, $api_redirection );
