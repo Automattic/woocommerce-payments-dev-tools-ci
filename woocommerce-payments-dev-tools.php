@@ -451,7 +451,7 @@ class WC_Payments_Dev_Tools {
 							value="<?php echo esc_html( get_option( self::BILLING_CLOCK_SECRET_KEY_OPTION, '' ) ) ?>"
 						/>
 					<small>(required for using billing clocks)</small>
-					<span id="copyButton" onclick="copyToClipboard(document.getElementById('<?php echo esc_attr( self::BILLING_CLOCK_SECRET_KEY_OPTION ) ?>'))" type='button' title="Copy to Clipboard" style="cursor:pointer">📋</span>
+					<span id="copyButton" type="button" title="Copy to Clipboard" style="cursor:pointer" data-copy-target="<?php echo esc_attr( self::BILLING_CLOCK_SECRET_KEY_OPTION ) ?>">📋</span>
 				</p>
 				<p>
 					<input type="submit" value="Submit" />
@@ -462,7 +462,7 @@ class WC_Payments_Dev_Tools {
 			<h2>
 				WP.com blog ID:
 				<span id="blogId"><?php echo( self::get_blog_id() ); ?></span>
-				<span id="copyButton" onclick="copyToClipboard(document.getElementById('blogId'))" type="button" title="Copy to Clipboard" style="cursor:pointer">📋</span>
+				<span id="copyButton" type="button" title="Copy to Clipboard" style="cursor:pointer" data-copy-target="blogId">📋</span>
 			</h2>
 		</p>
 		<?php
