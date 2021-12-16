@@ -53,6 +53,7 @@ class WC_Payments_Dev_Tools {
 		add_filter( 'wcpay_api_request_headers', [ __CLASS__, 'add_wcpay_request_headers' ], 10, 1 );
 		add_filter( 'upgrader_pre_download', [ __CLASS__, 'maybe_override_wcpay_version' ], 10, 4 );
 		add_action( 'init', [ __CLASS__, 'maybe_force_disconnected' ] );
+		add_action( 'admin_enqueue_scripts', [ __CLASS__, 'enqueue_scripts' ] );
 
 		if ( class_exists( 'WC_Payments_Subscriptions' ) && get_option( self::BILLING_CLOCKS_OPTION, false ) ) {
 			require_once 'billing-clocks/class-wc-pay-dev-billing-renewal-tester.php';
@@ -72,6 +73,13 @@ class WC_Payments_Dev_Tools {
 			[ __CLASS__, 'admin_page' ],
 			'dashicons-palmtree'
 		);
+	}
+
+	/**
+	 * Enqueue scripts.
+	 */
+	public static function enqueue_scripts() {
+		wp_enqueue_script( 'admin_script', plugin_dir_url( __FILE__ ) . 'script.js', array(), '1.0' );
 	}
 
 	/**
@@ -446,6 +454,7 @@ class WC_Payments_Dev_Tools {
 							value="<?php echo esc_html( get_option( self::BILLING_CLOCK_SECRET_KEY_OPTION, '' ) ) ?>"
 						/>
 					<small>(required for using billing clocks)</small>
+					<span id="copyButton" type="button" title="Copy to Clipboard" style="cursor:pointer" data-copy-target="<?php echo esc_attr( self::BILLING_CLOCK_SECRET_KEY_OPTION ) ?>">📋</span>
 				</p>
 				<p>
 					<input type="submit" value="Submit" />
@@ -453,7 +462,11 @@ class WC_Payments_Dev_Tools {
 			</form>
 		</p>
 		<p>
-			<h2>WP.com blog ID: <?php echo( self::get_blog_id() ); ?></h2>
+			<h2>
+				WP.com blog ID:
+				<span id="blogId"><?php echo( self::get_blog_id() ); ?></span>
+				<span id="copyButton" type="button" title="Copy to Clipboard" style="cursor:pointer" data-copy-target="blogId">📋</span>
+			</h2>
 		</p>
 		<?php
 			if ( class_exists( 'WC_Payments_Account' ) ): ?>
