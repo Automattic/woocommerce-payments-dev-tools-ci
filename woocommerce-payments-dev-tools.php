@@ -8,34 +8,34 @@
  */
 
 class WC_Payments_Dev_Tools {
-	public const ID = 'wcpaydev';
-	public const DEV_MODE_OPTION = 'wcpaydev_dev_mode';
-	public const FORCE_DISCONNECTED_OPTION = 'wcpaydev_force_disconnected';
-	public const FORCE_ONBOARDING_OPTION = 'wcpaydev_force_onboarding';
-	public const REDIRECT_OPTION = 'wcpaydev_redirect';
-	public const GROUPED_SETTINGS = '_wcpay_feature_grouped_settings';
-	public const ACCOUNT_TASK_LIST = '_wcpay_feature_account_overview_task_list';
-	public const UPE = '_wcpay_feature_upe';
-	public const UPE_ADDITIONAL_PAYMENT_METHODS = '_wcpay_feature_upe_additional_payment_methods';
-	public const PLATFORM_CHECKOUT = '_wcpay_feature_platform_checkout';
-	public const REDIRECT_TO_OPTION = 'wcpaydev_redirect_to';
-	public const PROXY_OPTION = 'wcpaydev_proxy';
-	public const PROXY_VIA_OPTION = 'wcpaydev_proxy_via';
-	public const DISPLAY_NOTICE = 'wcpaydev_display_notice';
-	public const WCPAY_RELEASE_TAG = 'wcpaydev_wcpay_release_tag';
-	public const BILLING_CLOCKS_OPTION = 'wcpaydev_wcpay_billing_clock';
-	public const BILLING_CLOCK_SECRET_KEY_OPTION = 'wcpay_billing_clock_secret';
-	public const SUBSCRIPTIONS = '_wcpay_feature_subscriptions';
+	const ID = 'wcpaydev';
+	const DEV_MODE_OPTION = 'wcpaydev_dev_mode';
+	const FORCE_DISCONNECTED_OPTION = 'wcpaydev_force_disconnected';
+	const FORCE_ONBOARDING_OPTION = 'wcpaydev_force_onboarding';
+	const REDIRECT_OPTION = 'wcpaydev_redirect';
+	const GROUPED_SETTINGS = '_wcpay_feature_grouped_settings';
+	const ACCOUNT_TASK_LIST = '_wcpay_feature_account_overview_task_list';
+	const UPE = '_wcpay_feature_upe';
+	const UPE_ADDITIONAL_PAYMENT_METHODS = '_wcpay_feature_upe_additional_payment_methods';
+	const PLATFORM_CHECKOUT = '_wcpay_feature_platform_checkout';
+	const REDIRECT_TO_OPTION = 'wcpaydev_redirect_to';
+	const PROXY_OPTION = 'wcpaydev_proxy';
+	const PROXY_VIA_OPTION = 'wcpaydev_proxy_via';
+	const DISPLAY_NOTICE = 'wcpaydev_display_notice';
+	const WCPAY_RELEASE_TAG = 'wcpaydev_wcpay_release_tag';
+	const BILLING_CLOCKS_OPTION = 'wcpaydev_wcpay_billing_clock';
+	const BILLING_CLOCK_SECRET_KEY_OPTION = 'wcpay_billing_clock_secret';
+	const SUBSCRIPTIONS = '_wcpay_feature_subscriptions';
 
 	/**
 	 * Helpers for GitHub access
 	 */
-	public const WCPAY_PLUGIN_REPOSITORY         = 'Automattic/woocommerce-payments';
-	private const WCPAY_PLUGIN_SLUG              = 'woocommerce-payments';
-	private const WCPAY_PLUGIN_RE                = '/\/woocommerce-payments\./';
-	private const WCPAY_RELEASE_LIST_FILE        = 'wcpaydev-wcpay-releases.json';
-	private const WCPAY_RELEASE_CACHE_TTL_IN_SEC = 600;
-	private const WCPAY_ASSET_FILENAME           = 'woocommerce-payments.zip';
+	const WCPAY_PLUGIN_REPOSITORY         = 'Automattic/woocommerce-payments';
+	const WCPAY_PLUGIN_SLUG              = 'woocommerce-payments';
+	const WCPAY_PLUGIN_RE                = '/\/woocommerce-payments\./';
+	const WCPAY_RELEASE_LIST_FILE        = 'wcpaydev-wcpay-releases.json';
+	const WCPAY_RELEASE_CACHE_TTL_IN_SEC = 600;
+	const WCPAY_ASSET_FILENAME           = 'woocommerce-payments.zip';
 
 	/**
 	 * Entry point of the plugin

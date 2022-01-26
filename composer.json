@@ -1,0 +1,9 @@
+{
+  "name": "automattic/woocommerce-payments-dev-tools",
+  "description": "Dev tools for WooCommerce Payments",
+  "minimum-stability": "dev",
+  "license": "GPL-3.0-or-later",
+  "require": {
+    "php": "7.*"
+  }
+}
