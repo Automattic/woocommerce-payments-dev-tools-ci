@@ -26,6 +26,7 @@ class WC_Payments_Dev_Tools {
 	const BILLING_CLOCKS_OPTION = 'wcpaydev_wcpay_billing_clock';
 	const BILLING_CLOCK_SECRET_KEY_OPTION = 'wcpay_billing_clock_secret';
 	const SUBSCRIPTIONS = '_wcpay_feature_subscriptions';
+	const CAPITAL = '_wcpay_feature_capital';
 
 	/**
 	 * Helpers for GitHub access
@@ -312,6 +313,7 @@ class WC_Payments_Dev_Tools {
 			self::enable_or_remove_option_from_checkbox( self::UPE );
 			self::enable_or_remove_option_from_checkbox( self::UPE_ADDITIONAL_PAYMENT_METHODS );
 			self::enable_or_remove_option_from_checkbox( self::SUBSCRIPTIONS );
+			self::update_option_from_checkbox( self::CAPITAL );
 			self::enable_or_remove_option_from_checkbox( self::PLATFORM_CHECKOUT );
 			self::update_option_from_checkbox( self::REDIRECT_OPTION );
 			if ( isset( $_POST[ self::REDIRECT_TO_OPTION ] ) ) {
@@ -408,6 +410,7 @@ class WC_Payments_Dev_Tools {
 				self::render_checkbox( self::UPE, "Enable UPE checkout", false, $has_upe_been_manually_disabled_text );
 				self::render_checkbox( self::UPE_ADDITIONAL_PAYMENT_METHODS, 'Add UPE additional payment methods' );
 				self::render_checkbox( self::SUBSCRIPTIONS, 'Enable WCPay subscriptions' );
+				self::render_checkbox( self::CAPITAL, 'Enable Stripe Capital' );
 				self::render_checkbox( self::PLATFORM_CHECKOUT, 'Enable platform checkout support' );
 				self::render_checkbox( self::REDIRECT_OPTION, 'Enable API request redirection' );
 				?>
@@ -547,6 +550,10 @@ class WC_Payments_Dev_Tools {
 
 		if ( get_option( self::SUBSCRIPTIONS, false ) ) {
 			$enabled_options[] = 'WCPay subscriptions enabled';
+		}
+
+		if ( get_option( self::CAPITAL, false ) ) {
+			$enabled_options[] = 'Stripe Capital enabled';
 		}
 
 		if ( get_option( self::FORCE_ONBOARDING_OPTION, false ) ) {
