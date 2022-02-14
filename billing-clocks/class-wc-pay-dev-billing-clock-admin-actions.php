@@ -1,6 +1,6 @@
 <?php
 /**
- * A class for adding and handling subscription actions to interact with the billing clock.
+ * A class for adding and handling subscription actions to interact with the test clock.
  *
  * @package WC_Pay_Dev_Billing_Clock_Admin_Actions
  */
@@ -36,7 +36,7 @@ class WC_Pay_Dev_Billing_Clock_Admin_Actions {
 		$subscription_clock = WC_Pay_Dev_Billing_Renewal_Tester::get_subscription_clock( $subscription );
 
 		if ( ! $subscription_clock ) {
-			// Display a button users can click to set up the billing clock.
+			// Display a button users can click to set up the test clock.
 			$query_args = [
 				'wcpd_billing_clock_action' => 'set_up',
 				'subscription_id'           => $subscription->get_id(),
@@ -115,7 +115,7 @@ class WC_Pay_Dev_Billing_Clock_Admin_Actions {
 
 		// If there's no clock. Add an action to set up the test.
 		if ( ! $subscription_clock ) {
-			$actions['wcpd_billing_clock_set_up'] = '🛠 Set up custom billing clock';
+			$actions['wcpd_billing_clock_set_up'] = '🛠 Set up custom test clock';
 			return $actions;
 		}
 
@@ -155,7 +155,7 @@ class WC_Pay_Dev_Billing_Clock_Admin_Actions {
 	 * Gets the next expected event from the WCPay/Stripe Subscription state.
 	 *
 	 * @param array $stripe_subscription The stripe subscription record.
-	 * @param array $billing_clock       The stripe billing clock record.
+	 * @param array $billing_clock       The stripe test clock record.
 	 *
 	 * @return string The next event. Can be: 'invoice.paid', 'invoice.upcoming', 'invoice.created' or an empty string.
 	 */
@@ -208,10 +208,10 @@ class WC_Pay_Dev_Billing_Clock_Admin_Actions {
 			WC_Payments::get_payments_api_client()->cancel_subscription( $wc_pay_subscription_id );
 		}
 
-		// We need to create a test customer with billing clock enabled.
+		// We need to create a test customer with test clock enabled.
 		WC_Pay_Dev_Billing_Renewal_Tester::setup_test_customer( $subscription );
 
-		// Now that we have a Stripe billing customer with a billing clock assigned, we need to recreate the subscription in Stripe assigned to this customer.
+		// Now that we have a Stripe billing customer with a test clock assigned, we need to recreate the subscription in Stripe assigned to this customer.
 		WC_Pay_Dev_Billing_Renewal_Tester::create_billing_clock_subscription( $subscription );
 
 		// Record that the subscription was set up. Signalling that the next event should be invoice.upcoming.
@@ -235,14 +235,14 @@ class WC_Pay_Dev_Billing_Clock_Admin_Actions {
 		if ( isset( $stripe_subscription['status'], $stripe_subscription['current_period_end'] ) ) {
 			$new_clock_time = $stripe_subscription['current_period_end'] - ( 2 * DAY_IN_SECONDS );
 
-			// Move the billing clock to be half an hour before the next payment.
+			// Move the test clock to be half an hour before the next payment.
 			$clock = WC_Pay_Dev_Billing_Renewal_Tester::advance_clock( $subscription_clock['id'], $new_clock_time );
 			$date  = wcs_get_datetime_from( $new_clock_time )->date_i18n( wc_date_format() . ' ' . wc_time_format() );
 
 			if ( ! $clock ) {
-				$subscription->add_order_note( "Upcoming invoice triggered. Error occured trying to advanced the Stripe Billing clock to 2 days prior to renewal - {$date}. {$clock->get_error_message()}." );
+				$subscription->add_order_note( "Upcoming invoice triggered. Error occured trying to advanced the Stripe Test clock to 2 days prior to renewal - {$date}. {$clock->get_error_message()}." );
 			} else {
-				$subscription->add_order_note( "Upcoming invoice triggered. Advanced the Stripe Billing clock to 2 days prior to renewal - {$date}." );
+				$subscription->add_order_note( "Upcoming invoice triggered. Advanced the Stripe Test clock to 2 days prior to renewal - {$date}." );
 			}
 
 			WC_Pay_Dev_Billing_Renewal_Tester::record_event_trigger( $subscription, 'invoice.upcoming' );
@@ -250,7 +250,7 @@ class WC_Pay_Dev_Billing_Clock_Admin_Actions {
 	}
 
 	/**
-	 * Progress the billing clock to trigger the invoice.created webhook from Stripe.
+	 * Progress the test clock to trigger the invoice.created webhook from Stripe.
 	 *
 	 * @param WC_Subscription $subscription
 	 */
@@ -266,14 +266,14 @@ class WC_Pay_Dev_Billing_Clock_Admin_Actions {
 		if ( isset( $stripe_subscription['status'], $stripe_subscription['current_period_end'] ) ) {
 			$next_payment_time = $stripe_subscription['current_period_end'];
 
-			// Move the billing clock to the next payment date.
+			// Move the test clock to the next payment date.
 			$clock = WC_Pay_Dev_Billing_Renewal_Tester::advance_clock( $subscription_clock['id'], $next_payment_time );
 			$date  = wcs_get_datetime_from( $next_payment_time )->date_i18n( wc_date_format() . ' ' . wc_time_format() );
 
 			if ( ! $clock ) {
-				$subscription->add_order_note( "Invoice creation triggered. Error occured trying to advanced the Stripe Billing clock to the next payment (current_period_end) {$date}. {$clock->get_error_message()}." );
+				$subscription->add_order_note( "Invoice creation triggered. Error occured trying to advanced the Stripe Test clock to the next payment (current_period_end) {$date}. {$clock->get_error_message()}." );
 			} else {
-				$subscription->add_order_note( "Invoice creation triggered. Advanced the Stripe Billing clock to the next payment (current_period_end) {$date}." );
+				$subscription->add_order_note( "Invoice creation triggered. Advanced the Stripe Test clock to the next payment (current_period_end) {$date}." );
 			}
 
 			WC_Pay_Dev_Billing_Renewal_Tester::record_event_trigger( $subscription, 'invoice.created' );
@@ -303,10 +303,10 @@ class WC_Pay_Dev_Billing_Clock_Admin_Actions {
 
 		if ( is_wp_error( $clock ) ) {
 			$date = wcs_get_datetime_from( $stripe_subscription['current_period_end'] )->date_i18n( wc_date_format() . ' ' . wc_time_format() );
-			$subscription->add_order_note( ucfirst( $payment_type ) . " latest invoice triggered. Error occured trying to advanced the Stripe Billing clock to invoice date: {$date}. {$clock->get_error_message()}." );
+			$subscription->add_order_note( ucfirst( $payment_type ) . " latest invoice triggered. Error occured trying to advanced the Stripe Test clock to invoice date: {$date}. {$clock->get_error_message()}." );
 		} else {
 			$date = wcs_get_datetime_from( $clock['frozen_time'] )->date_i18n( wc_date_format() . ' ' . wc_time_format() );
-			$subscription->add_order_note( ucfirst( $payment_type ) . " latest invoice triggered. Advanced the Stripe Billing clock to invoice date: {$date}." );
+			$subscription->add_order_note( ucfirst( $payment_type ) . " latest invoice triggered. Advanced the Stripe Test clock to invoice date: {$date}." );
 		}
 
 		if ( 'success' === $payment_type ) {
@@ -408,14 +408,14 @@ class WC_Pay_Dev_Billing_Clock_Admin_Actions {
 	}
 
 	/**
-	 * Handle the request to trigger a billing clock event.
+	 * Handle the request to trigger a test clock event.
 	 */
 	public static function handle_action_request() {
 		if ( isset( $_GET['wcpd_billing_clock_action'], $_GET['subscription_id'], $_GET['_wpnonce'] ) && check_admin_referer( 'wcpd_billing_clock_action' ) ) {
 			$subscription = wcs_get_subscription( absint( $_GET['subscription_id'] ) );
 
 			if ( $subscription ) {
-				// Trigger the relevent billing clock action and then redirect back to the edit subscription screen.
+				// Trigger the relevent test clock action and then redirect back to the edit subscription screen.
 				do_action( 'woocommerce_order_action_wcpd_billing_clock_' . wc_clean( $_GET['wcpd_billing_clock_action'] ), $subscription );
 				wp_safe_redirect( wcs_get_edit_post_link( $subscription->get_id() ) );
 				exit;
