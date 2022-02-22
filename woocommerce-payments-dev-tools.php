@@ -13,7 +13,6 @@ class WC_Payments_Dev_Tools {
 	const FORCE_DISCONNECTED_OPTION = 'wcpaydev_force_disconnected';
 	const FORCE_ONBOARDING_OPTION = 'wcpaydev_force_onboarding';
 	const REDIRECT_OPTION = 'wcpaydev_redirect';
-	const GROUPED_SETTINGS = '_wcpay_feature_grouped_settings';
 	const ACCOUNT_TASK_LIST = '_wcpay_feature_account_overview_task_list';
 	const UPE = '_wcpay_feature_upe';
 	const UPE_ADDITIONAL_PAYMENT_METHODS = '_wcpay_feature_upe_additional_payment_methods';
@@ -308,7 +307,6 @@ class WC_Payments_Dev_Tools {
 			self::update_option_from_checkbox( self::DEV_MODE_OPTION );
 			self::update_option_from_checkbox( self::FORCE_ONBOARDING_OPTION );
 			self::update_option_from_checkbox( self::FORCE_DISCONNECTED_OPTION );
-			self::update_option_from_checkbox( self::GROUPED_SETTINGS );
 			self::enable_or_remove_option_from_checkbox( self::ACCOUNT_TASK_LIST );
 			self::enable_or_remove_option_from_checkbox( self::UPE );
 			self::enable_or_remove_option_from_checkbox( self::UPE_ADDITIONAL_PAYMENT_METHODS );
@@ -405,7 +403,6 @@ class WC_Payments_Dev_Tools {
 				self::render_checkbox( self::FORCE_ONBOARDING_OPTION, 'Force onboarding', false, '(Check this to trigger the KYC flow when clicking on the ‘Reonboard’ link below)' );
 				self::render_checkbox( self::FORCE_DISCONNECTED_OPTION, 'Force the plugin to act as disconnected from WCPay' );
 				self::render_checkbox( self::ACCOUNT_TASK_LIST, 'Enable account overview task list' );
-				self::render_checkbox( self::GROUPED_SETTINGS, 'Enable grouped settings' );
 				$has_upe_been_manually_disabled_text = 'disabled' === get_option( self::UPE ) ? ' (was disabled through WCPay, un-check to reset or save to re-enable)' : '';
 				self::render_checkbox( self::UPE, "Enable UPE checkout", false, $has_upe_been_manually_disabled_text );
 				self::render_checkbox( self::UPE_ADDITIONAL_PAYMENT_METHODS, 'Add UPE additional payment methods' );
@@ -534,10 +531,6 @@ class WC_Payments_Dev_Tools {
 
 		if ( get_option( self::ACCOUNT_TASK_LIST, false ) ) {
 			$enabled_options[] = 'Account overview task list enabled';
-		}
-
-		if ( get_option( self::GROUPED_SETTINGS, false ) ) {
-			$enabled_options[] = 'Grouped settings enabled';
 		}
 
 		if ( get_option( self::UPE, false ) ) {
