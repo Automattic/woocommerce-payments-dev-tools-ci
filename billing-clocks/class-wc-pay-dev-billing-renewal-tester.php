@@ -1,6 +1,6 @@
 <?php
 /**
- * A class for help interact with the Stripe billing clock API.
+ * A class for help interact with the Stripe test clock API.
  *
  * @package WC_Pay_Dev_Billing_Renewal_Tester
  */
@@ -30,7 +30,7 @@ class WC_Pay_Dev_Billing_Renewal_Tester {
 	const FAILED_INVOICE_LOCK_TIME = 20;
 
 	/**
-	 * The billing clock client.
+	 * The test clock client.
 	 *
 	 * @var WC_Pay_Dev_Billing_Clock_Client
 	 */
@@ -51,7 +51,7 @@ class WC_Pay_Dev_Billing_Renewal_Tester {
 	private static $wcpay_subscription_cache = [];
 
 	/**
-	 * A memory cache of WCPay Billing Clocks.
+	 * A memory cache of WCPay Test Clocks.
 	 *
 	 * @var array
 	 */
@@ -78,20 +78,20 @@ class WC_Pay_Dev_Billing_Renewal_Tester {
 	}
 
 	/**
-	 * Displays an admin notice when the billing clock feature is enabled, but not available.
+	 * Displays an admin notice when the test clock feature is enabled, but not available.
 	 */
 	public static function display_admin_notice() {
 		$notice = sprintf(
-			"The %sWCPay Subscriptions renewal testing feature%s is enabled but that feature is not available. Please ensure you have set your %s'Secret Test Key'%s and your account is eligible to use %sStripe's Billing Clock endpoints%s.",
+			"The %sWCPay Subscriptions renewal testing feature%s is enabled but that feature is not available. Please ensure you have set your %s'Secret Test Key'%s and your account is eligible to use %sStripe's Test Clock endpoints%s.",
 			'<strong>', '</strong>',
 			'<em>', '</em>',
-			'<a href="https://stripe.com/docs/api/billing_clocks">', '</a>'
+			'<a href="https://stripe.com/docs/billing/testing/test_clocks">', '</a>'
 		);
 		echo "<div class='notice notice-error'><p>{$notice}</p></div>";
 	}
 
 	/**
-	 * Checks if the Billing Clocks feature is enabled on the Account.
+	 * Checks if the Test Clocks feature is enabled on the Account.
 	 *
 	 * @return bool
 	 */
@@ -101,7 +101,7 @@ class WC_Pay_Dev_Billing_Renewal_Tester {
 		}
 
 		$billing_clock = self::$client->post(
-			'/test/billing_clocks',
+			'/test_helpers/test_clocks',
 			array(
 				'frozen_time' => gmdate( 'U' ),
 			)
@@ -114,29 +114,29 @@ class WC_Pay_Dev_Billing_Renewal_Tester {
 	}
 
 	/**
-	 * Gets a Billing clock from a subscription.
+	 * Gets a Test clock from a subscription.
 	 *
 	 * @param WC_Subscription $subscription
-	 * @return array|bool The billing clock object data, otherwise false.
+	 * @return array|bool The test clock object data, otherwise false.
 	 */
 	public static function get_subscription_clock( $subscription ) {
 		$subscription = self::get_wcpay_subscription( $subscription );
 
-		if ( ! $subscription || empty( $subscription['billing_clock'] ) ) {
+		if ( ! $subscription || empty( $subscription['test_clock'] ) ) {
 			return false;
 		}
 
-		return self::get_clock( $subscription['billing_clock'] );
+		return self::get_clock( $subscription['test_clock'] );
 	}
 
 	/**
-	 * Gets a billing clock object.
+	 * Gets a test clock object.
 	 *
-	 * @param string $clock_id The Billing Clock ID to retreive.
+	 * @param string $clock_id The Test Clock ID to retreive.
 	 */
 	public static function get_clock( $clock_id ) {
 		if ( ! isset( self::$wcpay_clock_cache[ $clock_id ] ) ) {
-			$clock = self::$client->get( "/test/billing_clocks/{$clock_id}" );
+			$clock = self::$client->get( "/test_helpers/test_clocks/{$clock_id}" );
 			self::$wcpay_clock_cache[ $clock_id ] = is_wp_error( $clock ) ? false : $clock;
 		}
 
@@ -173,7 +173,7 @@ class WC_Pay_Dev_Billing_Renewal_Tester {
 	 */
 	public static function advance_clock( $clock_id, $timestamp ) {
 		$clock = self::$client->post(
-			"/test/billing_clocks/$clock_id/advance",
+			"/test_helpers/test_clocks/$clock_id/advance",
 			array(
 				'frozen_time' => $timestamp
 			)
@@ -183,7 +183,7 @@ class WC_Pay_Dev_Billing_Renewal_Tester {
 	}
 
 	/**
-	 * Creates a new WP user and Stripe Customer will a Stripe billing clock and assigns them to a subscription.
+	 * Creates a new WP user and Stripe Customer will a Stripe test clock and assigns them to a subscription.
 	 *
 	 * @param WC_Subscription The subscription to set up a new test customer for.
 	 */
@@ -217,14 +217,14 @@ class WC_Pay_Dev_Billing_Renewal_Tester {
 		}
 
 		$billing_clock = self::$client->post(
-			'/test/billing_clocks',
+			'/test_helpers/test_clocks',
 			array(
 				'frozen_time' => gmdate( 'U' ),
 			)
 		);
 
 		if ( is_wp_error( $billing_clock ) ) {
-			$subscription->add_order_note( "Failed to create the billing clock for the new customer. {$billing_clock->get_error_message()}." );
+			$subscription->add_order_note( "Failed to create the test clock for the new customer. {$billing_clock->get_error_message()}." );
 			return;
 		}
 
@@ -234,7 +234,7 @@ class WC_Pay_Dev_Billing_Renewal_Tester {
 				'name'             => implode( ' ', $name ),
 				'email'            => $email,
 				'payment_method'   => $payment_method['id'],
-				'billing_clock'    => $billing_clock['id'],
+				'test_clock'       => $billing_clock['id'],
 				'invoice_settings' => array(
 					'default_payment_method' => $payment_method['id'],
 				),
@@ -278,7 +278,7 @@ class WC_Pay_Dev_Billing_Renewal_Tester {
 
 		update_user_meta( $user_id, WC_Payments_Customer_Service::WCPAY_TEST_CUSTOMER_ID_OPTION, $customer['id'] );
 
-		// Set the subscription's customer to the Billing Clock enabled customer.
+		// Set the subscription's customer to the Test Clock enabled customer.
 		$subscription->set_customer_id( $user_id );
 
 		// Set the Stripe Customer ID in subscription meta.

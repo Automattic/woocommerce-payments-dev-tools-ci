@@ -459,7 +459,7 @@ class WC_Payments_Dev_Tools {
 					</select>
 				</p>
 				<p>
-					<?php self::render_checkbox( self::BILLING_CLOCKS_OPTION, 'WCPay Subscriptions renewal testing (Billing clocks)', false ); ?>
+					<?php self::render_checkbox( self::BILLING_CLOCKS_OPTION, 'WCPay Subscriptions renewal testing (Test clocks)', false ); ?>
 					<label for="wcpay_billing_clock_secret">WC Pay Secret Test Key</label>
 					<input
 							type="text"
@@ -467,7 +467,7 @@ class WC_Payments_Dev_Tools {
 							name="<?php echo esc_attr( self::BILLING_CLOCK_SECRET_KEY_OPTION ) ?>"
 							value="<?php echo esc_html( get_option( self::BILLING_CLOCK_SECRET_KEY_OPTION, '' ) ) ?>"
 						/>
-					<small>(required for using billing clocks)</small>
+					<small>(required for using test clocks)</small>
 					<span id="copyButton" type="button" title="Copy to Clipboard" style="cursor:pointer" data-copy-target="<?php echo esc_attr( self::BILLING_CLOCK_SECRET_KEY_OPTION ) ?>">📋</span>
 				</p>
 				<p>
