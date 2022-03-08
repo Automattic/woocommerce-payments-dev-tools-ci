@@ -289,6 +289,7 @@ class WC_Payments_Dev_Tools {
 			check_admin_referer( 'wcpaydev-clear-notes' );
 
 			WC_Payments::remove_woo_admin_notes();
+			WCPay\MultiCurrency\MultiCurrency::remove_woo_admin_notes();
 
 			wp_safe_redirect( self::get_settings_url() );
 		}
