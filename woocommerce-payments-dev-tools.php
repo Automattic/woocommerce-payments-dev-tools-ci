@@ -211,7 +211,7 @@ class WC_Payments_Dev_Tools {
 	 */
 	public static function add_wcpay_request_headers( $headers ) {
 		if ( isset( $_COOKIE['XDEBUG_SESSION'] ) ) {
-			$headers['Cookie'] = sanitize_text_field( wp_unslash( $_COOKIE['XDEBUG_SESSION'] ) );
+			$headers['Cookie'] = 'XDEBUG_SESSION=' . sanitize_text_field( wp_unslash( $_COOKIE['XDEBUG_SESSION'] ) );
 		}
 
 		return $headers;
