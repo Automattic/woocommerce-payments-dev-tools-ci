@@ -13,6 +13,7 @@ class WC_Payments_Dev_Tools {
 	const FORCE_DISCONNECTED_OPTION = 'wcpaydev_force_disconnected';
 	const FORCE_ONBOARDING_OPTION = 'wcpaydev_force_onboarding';
 	const REDIRECT_OPTION = 'wcpaydev_redirect';
+	const REDIRECT_LOCALHOST_OPTION = 'wcpaydev_redirect_localhost';
 	const ACCOUNT_TASK_LIST = '_wcpay_feature_account_overview_task_list';
 	const UPE = '_wcpay_feature_upe';
 	const UPE_ADDITIONAL_PAYMENT_METHODS = '_wcpay_feature_upe_additional_payment_methods';
@@ -148,17 +149,18 @@ class WC_Payments_Dev_Tools {
 			return $preempt;
 		}
 
-		// detect the wcpay requests
-		if ( 1 !== preg_match( '/^https?:\/\/public-api\.wordpress\.com\/(.+?(?:wcpay|tumblrpay).+)/', $url, $matches ) ) {
-			return $preempt;
+		if ( get_option( self::REDIRECT_OPTION, false ) && // detect the wcpay requests.
+			1 === preg_match( '/^https?:\/\/public-api\.wordpress\.com\/(.+?(?:wcpay|tumblrpay).+)/', $url, $matches ) ) {
+			$redirect_to = trailingslashit( self::get_redirect_to() );
+			return wp_remote_request( $redirect_to . $matches[1], $args );
 		}
 
-		if ( ! get_option( self::REDIRECT_OPTION, false ) ) {
-			return $preempt;
+		if ( get_option( self::REDIRECT_LOCALHOST_OPTION, false ) &&
+			1 === preg_match( '/^https?:\/\/localhost/', $url, $matches ) ) {
+			$redirect_to = str_replace( 'localhost', 'host.docker.internal', $url );
+			return wp_remote_request( $redirect_to, $args );
 		}
-
-		$redirect_to = trailingslashit( self::get_redirect_to() );
-		return wp_remote_request( $redirect_to . $matches[1], $args );
+		return $preempt;
 	}
 
 	/**
@@ -315,6 +317,7 @@ class WC_Payments_Dev_Tools {
 			self::update_option_from_checkbox( self::CAPITAL );
 			self::enable_or_remove_option_from_checkbox( self::PLATFORM_CHECKOUT );
 			self::update_option_from_checkbox( self::REDIRECT_OPTION );
+			self::update_option_from_checkbox( self::REDIRECT_LOCALHOST_OPTION );
 			if ( isset( $_POST[ self::REDIRECT_TO_OPTION ] ) ) {
 				update_option( self::REDIRECT_TO_OPTION, $_POST[ self::REDIRECT_TO_OPTION ] );
 			}
@@ -411,6 +414,7 @@ class WC_Payments_Dev_Tools {
 				self::render_checkbox( self::CAPITAL, 'Enable Stripe Capital' );
 				self::render_checkbox( self::PLATFORM_CHECKOUT, 'Enable platform checkout support' );
 				self::render_checkbox( self::REDIRECT_OPTION, 'Enable API request redirection' );
+				self::render_checkbox( self::REDIRECT_LOCALHOST_OPTION, 'Enable localhost request redirection to host.docker.internal' );
 				?>
 				<p>
 					<label for="wcpaydev-redirect-to">
