@@ -8,40 +8,41 @@
  */
 
 class WC_Payments_Dev_Tools {
-	public const ID = 'wcpaydev';
-	public const DEV_MODE_OPTION = 'wcpaydev_dev_mode';
-	public const FORCE_DISCONNECTED_OPTION = 'wcpaydev_force_disconnected';
-	public const FORCE_ONBOARDING_OPTION = 'wcpaydev_force_onboarding';
-	public const REDIRECT_OPTION = 'wcpaydev_redirect';
-	public const GROUPED_SETTINGS = '_wcpay_feature_grouped_settings';
-	public const ACCOUNT_TASK_LIST = '_wcpay_feature_account_overview_task_list';
-	public const UPE = '_wcpay_feature_upe';
-	public const UPE_ADDITIONAL_PAYMENT_METHODS = '_wcpay_feature_upe_additional_payment_methods';
-	public const PLATFORM_CHECKOUT = '_wcpay_feature_platform_checkout';
-	public const REDIRECT_TO_OPTION = 'wcpaydev_redirect_to';
-	public const PROXY_OPTION = 'wcpaydev_proxy';
-	public const PROXY_VIA_OPTION = 'wcpaydev_proxy_via';
-	public const DISPLAY_NOTICE = 'wcpaydev_display_notice';
-	public const WCPAY_RELEASE_TAG = 'wcpaydev_wcpay_release_tag';
-	public const BILLING_CLOCKS_OPTION = 'wcpaydev_wcpay_billing_clock';
-	public const BILLING_CLOCK_SECRET_KEY_OPTION = 'wcpay_billing_clock_secret';
-	public const SUBSCRIPTIONS = '_wcpay_feature_subscriptions';
+	const ID = 'wcpaydev';
+	const DEV_MODE_OPTION = 'wcpaydev_dev_mode';
+	const FORCE_DISCONNECTED_OPTION = 'wcpaydev_force_disconnected';
+	const FORCE_ONBOARDING_OPTION = 'wcpaydev_force_onboarding';
+	const REDIRECT_OPTION = 'wcpaydev_redirect';
+	const REDIRECT_LOCALHOST_OPTION = 'wcpaydev_redirect_localhost';
+	const ACCOUNT_TASK_LIST = '_wcpay_feature_account_overview_task_list';
+	const UPE = '_wcpay_feature_upe';
+	const UPE_ADDITIONAL_PAYMENT_METHODS = '_wcpay_feature_upe_additional_payment_methods';
+	const PLATFORM_CHECKOUT = '_wcpay_feature_platform_checkout';
+	const REDIRECT_TO_OPTION = 'wcpaydev_redirect_to';
+	const PROXY_OPTION = 'wcpaydev_proxy';
+	const PROXY_VIA_OPTION = 'wcpaydev_proxy_via';
+	const DISPLAY_NOTICE = 'wcpaydev_display_notice';
+	const WCPAY_RELEASE_TAG = 'wcpaydev_wcpay_release_tag';
+	const BILLING_CLOCKS_OPTION = 'wcpaydev_wcpay_billing_clock';
+	const BILLING_CLOCK_SECRET_KEY_OPTION = 'wcpay_billing_clock_secret';
+	const SUBSCRIPTIONS = '_wcpay_feature_subscriptions';
+	const CAPITAL = '_wcpay_feature_capital';
 
 	/**
 	 * Helpers for GitHub access
 	 */
-	public const WCPAY_PLUGIN_REPOSITORY         = 'Automattic/woocommerce-payments';
-	private const WCPAY_PLUGIN_SLUG              = 'woocommerce-payments';
-	private const WCPAY_PLUGIN_RE                = '/\/woocommerce-payments\./';
-	private const WCPAY_RELEASE_LIST_FILE        = 'wcpaydev-wcpay-releases.json';
-	private const WCPAY_RELEASE_CACHE_TTL_IN_SEC = 600;
-	private const WCPAY_ASSET_FILENAME           = 'woocommerce-payments.zip';
+	const WCPAY_PLUGIN_REPOSITORY         = 'Automattic/woocommerce-payments';
+	const WCPAY_PLUGIN_SLUG              = 'woocommerce-payments';
+	const WCPAY_PLUGIN_RE                = '/\/woocommerce-payments\./';
+	const WCPAY_RELEASE_LIST_FILE        = 'wcpaydev-wcpay-releases.json';
+	const WCPAY_RELEASE_CACHE_TTL_IN_SEC = 600;
+	const WCPAY_ASSET_FILENAME           = 'woocommerce-payments.zip';
 
 	/**
 	 * Entry point of the plugin
 	 */
 	public static function init() {
-		self::maybe_set_proxy();
+		add_action( 'http_api_curl', [ __CLASS__, 'maybe_proxy_wpcom_request' ], 10, 3 );
 
 		add_action( 'admin_menu', [ __CLASS__, 'add_admin_page' ] );
 		add_action( 'admin_notices', [ __CLASS__, 'add_notices' ] );
@@ -53,6 +54,7 @@ class WC_Payments_Dev_Tools {
 		add_filter( 'wcpay_api_request_headers', [ __CLASS__, 'add_wcpay_request_headers' ], 10, 1 );
 		add_filter( 'upgrader_pre_download', [ __CLASS__, 'maybe_override_wcpay_version' ], 10, 4 );
 		add_action( 'init', [ __CLASS__, 'maybe_force_disconnected' ] );
+		add_action( 'admin_enqueue_scripts', [ __CLASS__, 'enqueue_scripts' ] );
 
 		if ( class_exists( 'WC_Payments_Subscriptions' ) && get_option( self::BILLING_CLOCKS_OPTION, false ) ) {
 			require_once 'billing-clocks/class-wc-pay-dev-billing-renewal-tester.php';
@@ -72,6 +74,13 @@ class WC_Payments_Dev_Tools {
 			[ __CLASS__, 'admin_page' ],
 			'dashicons-palmtree'
 		);
+	}
+
+	/**
+	 * Enqueue scripts.
+	 */
+	public static function enqueue_scripts() {
+		wp_enqueue_script( 'admin_script', plugin_dir_url( __FILE__ ) . 'script.js', array(), '1.0' );
 	}
 
 	/**
@@ -140,39 +149,49 @@ class WC_Payments_Dev_Tools {
 			return $preempt;
 		}
 
-		// detect the wcpay requests
-		if ( 1 !== preg_match( '/^https?:\/\/public-api\.wordpress\.com\/(.+?(?:wcpay|tumblrpay).+)/', $url, $matches ) ) {
-			return $preempt;
+		if ( get_option( self::REDIRECT_OPTION, false ) && // detect the wcpay requests.
+			1 === preg_match( '/^https?:\/\/public-api\.wordpress\.com\/(.+?(?:wcpay|tumblrpay).+)/', $url, $matches ) ) {
+			$redirect_to = trailingslashit( self::get_redirect_to() );
+			return wp_remote_request( $redirect_to . $matches[1], $args );
 		}
 
-		if ( ! get_option( self::REDIRECT_OPTION, false ) ) {
-			return $preempt;
+		if ( get_option( self::REDIRECT_LOCALHOST_OPTION, false ) &&
+			1 === preg_match( '/^https?:\/\/localhost/', $url, $matches ) ) {
+			$redirect_to = str_replace( 'localhost', 'host.docker.internal', $url );
+			return wp_remote_request( $redirect_to, $args );
 		}
-
-		$redirect_to = trailingslashit( self::get_redirect_to() );
-		return wp_remote_request( $redirect_to . $matches[1], $args );
+		return $preempt;
 	}
 
 	/**
 	 * If enabled, sets *only* the *.wordpress.com requests to be sent via the a8c proxy.
+	 * Works only if cURL is used as a method of HTTP transport.
 	 *
 	 * @return void
 	 */
-	public static function maybe_set_proxy() {
+	public static function maybe_proxy_wpcom_request( &$handle, $parsed_args, $url ) {
+		// Return early if the proxy option is disabled
 		if ( ! get_option( self::PROXY_OPTION, true ) ) {
 			return;
 		}
 
-		$proxy = untrailingslashit( self::get_proxy_via() );
-		if ( 1 !== preg_match( '/(.+):(\d+)/', $proxy, $matches ) ) {
+		// Return early if the request is not for wpcom
+		if ( 1 !== preg_match( '/^(https?:\/\/)?([^\/]+\.)?wordpress.com/', $url ) ) {
 			return;
 		}
 
-		define( 'WP_PROXY_HOST', $matches[1] );
-		define( 'WP_PROXY_PORT', $matches[2] );
-		add_filter( 'pre_http_send_through_proxy', function( $_, $uri, $check, $home ) {
-			return 1 === preg_match( '/.*wordpress.com/', $check['host'] );
-		}, 10, 4 );
+		// Return early if the proxy url can't be parsed.
+		$proxy = untrailingslashit( self::get_proxy_via() );
+		if ( 1 !== preg_match( '/(.+):(\d+)/', $proxy, $proxy_matches ) ) {
+			return;
+		}
+
+		$proxy_host = $proxy_matches[1];
+		$proxy_port = $proxy_matches[2];
+
+		curl_setopt( $handle, CURLOPT_PROXYTYPE, CURLPROXY_HTTP );
+		curl_setopt( $handle, CURLOPT_PROXY, $proxy_host );
+		curl_setopt( $handle, CURLOPT_PROXYPORT, $proxy_port );
 	}
 
 	/**
@@ -272,6 +291,7 @@ class WC_Payments_Dev_Tools {
 			check_admin_referer( 'wcpaydev-clear-notes' );
 
 			WC_Payments::remove_woo_admin_notes();
+			WCPay\MultiCurrency\MultiCurrency::remove_woo_admin_notes();
 
 			wp_safe_redirect( self::get_settings_url() );
 		}
@@ -290,13 +310,14 @@ class WC_Payments_Dev_Tools {
 			self::update_option_from_checkbox( self::DEV_MODE_OPTION );
 			self::update_option_from_checkbox( self::FORCE_ONBOARDING_OPTION );
 			self::update_option_from_checkbox( self::FORCE_DISCONNECTED_OPTION );
-			self::update_option_from_checkbox( self::GROUPED_SETTINGS );
 			self::enable_or_remove_option_from_checkbox( self::ACCOUNT_TASK_LIST );
 			self::enable_or_remove_option_from_checkbox( self::UPE );
 			self::enable_or_remove_option_from_checkbox( self::UPE_ADDITIONAL_PAYMENT_METHODS );
 			self::enable_or_remove_option_from_checkbox( self::SUBSCRIPTIONS );
+			self::update_option_from_checkbox( self::CAPITAL );
 			self::enable_or_remove_option_from_checkbox( self::PLATFORM_CHECKOUT );
 			self::update_option_from_checkbox( self::REDIRECT_OPTION );
+			self::update_option_from_checkbox( self::REDIRECT_LOCALHOST_OPTION );
 			if ( isset( $_POST[ self::REDIRECT_TO_OPTION ] ) ) {
 				update_option( self::REDIRECT_TO_OPTION, $_POST[ self::REDIRECT_TO_OPTION ] );
 			}
@@ -348,7 +369,7 @@ class WC_Payments_Dev_Tools {
 	 * @param string $label
 	 * @param bool   $default
 	 */
-	private static function render_checkbox( $option_name, $label, $default = false ) {
+	private static function render_checkbox( $option_name, $label, $default = false, $description = '' ) {
 		?>
 		<p>
 			<input
@@ -360,6 +381,11 @@ class WC_Payments_Dev_Tools {
 			<label for="<?php echo( $option_name ) ?>">
 				<?php echo( $label ) ?>
 			</label>
+			<?php
+			  if ( !empty( $description ) ) {
+				echo "<small>" . $description . "</small>";
+			}
+			?>
 		</p>
 		<?php
 	}
@@ -378,16 +404,17 @@ class WC_Payments_Dev_Tools {
 				<?php
 				wp_nonce_field( 'wcpaydev-save-settings', 'wcpaydev-save-settings' );
 				self::render_checkbox( self::DEV_MODE_OPTION, 'Dev mode enabled', true );
-				self::render_checkbox( self::FORCE_ONBOARDING_OPTION, 'Force onboarding' );
+				self::render_checkbox( self::FORCE_ONBOARDING_OPTION, 'Force onboarding', false, '(Check this to trigger the KYC flow when clicking on the ‘Reonboard’ link below)' );
 				self::render_checkbox( self::FORCE_DISCONNECTED_OPTION, 'Force the plugin to act as disconnected from WCPay' );
 				self::render_checkbox( self::ACCOUNT_TASK_LIST, 'Enable account overview task list' );
-				self::render_checkbox( self::GROUPED_SETTINGS, 'Enable grouped settings' );
 				$has_upe_been_manually_disabled_text = 'disabled' === get_option( self::UPE ) ? ' (was disabled through WCPay, un-check to reset or save to re-enable)' : '';
-				self::render_checkbox( self::UPE, "Enable UPE checkout{$has_upe_been_manually_disabled_text}" );
+				self::render_checkbox( self::UPE, "Enable UPE checkout", false, $has_upe_been_manually_disabled_text );
 				self::render_checkbox( self::UPE_ADDITIONAL_PAYMENT_METHODS, 'Add UPE additional payment methods' );
 				self::render_checkbox( self::SUBSCRIPTIONS, 'Enable WCPay subscriptions' );
+				self::render_checkbox( self::CAPITAL, 'Enable Stripe Capital' );
 				self::render_checkbox( self::PLATFORM_CHECKOUT, 'Enable platform checkout support' );
 				self::render_checkbox( self::REDIRECT_OPTION, 'Enable API request redirection' );
+				self::render_checkbox( self::REDIRECT_LOCALHOST_OPTION, 'Enable localhost request redirection to host.docker.internal' );
 				?>
 				<p>
 					<label for="wcpaydev-redirect-to">
@@ -437,7 +464,7 @@ class WC_Payments_Dev_Tools {
 					</select>
 				</p>
 				<p>
-					<?php self::render_checkbox( self::BILLING_CLOCKS_OPTION, 'WCPay Subscriptions renewal testing (Billing clocks)', false ); ?>
+					<?php self::render_checkbox( self::BILLING_CLOCKS_OPTION, 'WCPay Subscriptions renewal testing (Test clocks)', false ); ?>
 					<label for="wcpay_billing_clock_secret">WC Pay Secret Test Key</label>
 					<input
 							type="text"
@@ -445,7 +472,8 @@ class WC_Payments_Dev_Tools {
 							name="<?php echo esc_attr( self::BILLING_CLOCK_SECRET_KEY_OPTION ) ?>"
 							value="<?php echo esc_html( get_option( self::BILLING_CLOCK_SECRET_KEY_OPTION, '' ) ) ?>"
 						/>
-					<small>(required for using billing clocks)</small>
+					<small>(required for using test clocks)</small>
+					<span id="copyButton" type="button" title="Copy to Clipboard" style="cursor:pointer" data-copy-target="<?php echo esc_attr( self::BILLING_CLOCK_SECRET_KEY_OPTION ) ?>">📋</span>
 				</p>
 				<p>
 					<input type="submit" value="Submit" />
@@ -453,7 +481,11 @@ class WC_Payments_Dev_Tools {
 			</form>
 		</p>
 		<p>
-			<h2>WP.com blog ID: <?php echo( self::get_blog_id() ); ?></h2>
+			<h2>
+				WP.com blog ID:
+				<span id="blogId"><?php echo( self::get_blog_id() ); ?></span>
+				<span id="copyButton" type="button" title="Copy to Clipboard" style="cursor:pointer" data-copy-target="blogId">📋</span>
+			</h2>
 		</p>
 		<?php
 			if ( class_exists( 'WC_Payments_Account' ) ): ?>
@@ -506,10 +538,6 @@ class WC_Payments_Dev_Tools {
 			$enabled_options[] = 'Account overview task list enabled';
 		}
 
-		if ( get_option( self::GROUPED_SETTINGS, false ) ) {
-			$enabled_options[] = 'Grouped settings enabled';
-		}
-
 		if ( get_option( self::UPE, false ) ) {
 			$enabled_options[] = 'UPE checkout enabled';
 		}
@@ -520,6 +548,10 @@ class WC_Payments_Dev_Tools {
 
 		if ( get_option( self::SUBSCRIPTIONS, false ) ) {
 			$enabled_options[] = 'WCPay subscriptions enabled';
+		}
+
+		if ( get_option( self::CAPITAL, false ) ) {
+			$enabled_options[] = 'Stripe Capital enabled';
 		}
 
 		if ( get_option( self::FORCE_ONBOARDING_OPTION, false ) ) {
