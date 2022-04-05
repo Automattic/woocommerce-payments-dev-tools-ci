@@ -17,7 +17,6 @@ class WC_Payments_Dev_Tools {
 	const ACCOUNT_TASK_LIST = '_wcpay_feature_account_overview_task_list';
 	const UPE = '_wcpay_feature_upe';
 	const UPE_ADDITIONAL_PAYMENT_METHODS = '_wcpay_feature_upe_additional_payment_methods';
-	const PLATFORM_CHECKOUT = '_wcpay_feature_platform_checkout';
 	const REDIRECT_TO_OPTION = 'wcpaydev_redirect_to';
 	const PROXY_OPTION = 'wcpaydev_proxy';
 	const PROXY_VIA_OPTION = 'wcpaydev_proxy_via';
@@ -320,7 +319,6 @@ class WC_Payments_Dev_Tools {
 			self::enable_or_remove_option_from_checkbox( self::SUBSCRIPTIONS );
 			self::update_option_from_checkbox( self::CAPITAL );
 			self::update_option_from_checkbox( self::DOCUMENTS );
-			self::enable_or_remove_option_from_checkbox( self::PLATFORM_CHECKOUT );
 			self::update_option_from_checkbox( self::REDIRECT_OPTION );
 			self::update_option_from_checkbox( self::REDIRECT_LOCALHOST_OPTION );
 			if ( isset( $_POST[ self::REDIRECT_TO_OPTION ] ) ) {
@@ -418,7 +416,6 @@ class WC_Payments_Dev_Tools {
 				self::render_checkbox( self::SUBSCRIPTIONS, 'Enable WCPay subscriptions' );
 				self::render_checkbox( self::CAPITAL, 'Enable Stripe Capital' );
 				self::render_checkbox( self::DOCUMENTS, 'Enable WCPay Documents section' );
-				self::render_checkbox( self::PLATFORM_CHECKOUT, 'Enable platform checkout support' );
 				self::render_checkbox( self::REDIRECT_OPTION, 'Enable API request redirection' );
 				self::render_checkbox( self::REDIRECT_LOCALHOST_OPTION, 'Enable localhost request redirection to host.docker.internal' );
 				?>
