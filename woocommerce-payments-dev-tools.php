@@ -416,8 +416,8 @@ class WC_Payments_Dev_Tools {
 				self::render_checkbox( self::SUBSCRIPTIONS, 'Enable WCPay subscriptions' );
 				self::render_checkbox( self::CAPITAL, 'Enable Stripe Capital' );
 				self::render_checkbox( self::DOCUMENTS, 'Enable WCPay Documents section' );
-				self::render_checkbox( self::REDIRECT_OPTION, 'Enable API request redirection' );
 				self::render_checkbox( self::REDIRECT_LOCALHOST_OPTION, 'Enable localhost request redirection to host.docker.internal' );
+				self::render_checkbox( self::REDIRECT_OPTION, 'Enable API request redirection' );
 				?>
 				<p>
 					<label for="wcpaydev-redirect-to">
