@@ -7,6 +7,8 @@
  * Author URI: https://woocommerce.com/
  */
 
+ use WCPay\Database_Cache;
+
 class WC_Payments_Dev_Tools {
 	const ID = 'wcpaydev';
 	const DEV_MODE_OPTION = 'wcpaydev_dev_mode';
@@ -37,6 +39,8 @@ class WC_Payments_Dev_Tools {
 	const WCPAY_RELEASE_LIST_FILE        = 'wcpaydev-wcpay-releases.json';
 	const WCPAY_RELEASE_CACHE_TTL_IN_SEC = 600;
 	const WCPAY_ASSET_FILENAME           = 'woocommerce-payments.zip';
+
+	private static $database_cache = null;
 
 	/**
 	 * Entry point of the plugin
@@ -227,17 +231,7 @@ class WC_Payments_Dev_Tools {
 			return;
 		}
 
-		if ( ! class_exists( 'WC_Payments_Account' ) ) {
-			return;
-		}
-
-		update_option(
-		        WC_Payments_Account::ACCOUNT_OPTION,
-                [
-                    'account' => [],
-                    'expires' => time() + YEAR_IN_SECONDS,
-                ]
-        );
+		self::get_database_cache()->add( Database_Cache::ACCOUNT_KEY, [] );
 	}
 
 	/**
@@ -494,7 +488,7 @@ class WC_Payments_Dev_Tools {
 			if ( class_exists( 'WC_Payments_Account' ) ): ?>
 			<p>
 				<h2>Account cache contents <a href="<?php echo wp_nonce_url( add_query_arg( [ 'wcpaydev-clear-cache' => '1' ], self::get_settings_url() ), 'wcpaydev-clear-cache' ); ?>">(clear)</a>:</h2>
-				<textarea rows="15" cols="100"><?php echo esc_html( var_export( get_option( WC_Payments_Account::ACCOUNT_OPTION ), true ) ) ?></textarea>
+				<textarea rows="15" cols="100"><?php echo esc_html( var_export( get_option( Database_Cache::ACCOUNT_KEY ), true ) ) ?></textarea>
 			</p>
 			<p>
 					<h2>Gateway settings <a href="<?php echo WC_Payment_Gateway_WCPay::get_settings_url(); ?>">(edit)</a>:</h2>
@@ -630,10 +624,7 @@ class WC_Payments_Dev_Tools {
 	 * Clears the wcpay account cache
 	 */
 	private static function clear_account_cache() {
-		if ( ! class_exists( 'WC_Payments_Account' ) ) {
-			return;
-		}
-		delete_option( WC_Payments_Account::ACCOUNT_OPTION );
+		self::get_database_cache()->delete( Database_Cache::ACCOUNT_KEY );
 	}
 
 	/**
@@ -751,6 +742,23 @@ class WC_Payments_Dev_Tools {
 		}
 
 		return Jetpack_Options::get_option( 'id' );
+	}
+
+	/**
+	 * Gets an instance of Database_Cache
+	 *
+	 * @return Database_Cache|null The instance, if the class is available
+	 */
+	private static function get_database_cache(): ?Database_Cache {
+		if ( ! class_exists( Database_Cache::class ) ) {
+			return null;
+		}
+
+		if ( null === self::$database_cache ) {
+			self::$database_cache = new Database_Cache();
+		}
+
+		return self::$database_cache;
 	}
 
 	/**
