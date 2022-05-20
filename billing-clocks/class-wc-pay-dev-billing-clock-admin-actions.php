@@ -115,7 +115,7 @@ class WC_Pay_Dev_Billing_Clock_Admin_Actions {
 
 		// Check that this is a WCPay subscription.
 		if ( ! $stripe_subscription ) {
-			return;
+			return $actions;
 		}
 
 		$subscription_clock = WC_Pay_Dev_Billing_Renewal_Tester::get_subscription_clock( $theorder );
@@ -131,7 +131,7 @@ class WC_Pay_Dev_Billing_Clock_Admin_Actions {
 
 		// Subscriptions which are past due have a failed last invoice that will need to be handled first.
 		if ( 'past_due' === $stripe_subscription['status'] ) {
-			return;
+			return $actions;
 		}
 
 		// Add an action depending on what the next event should be.
