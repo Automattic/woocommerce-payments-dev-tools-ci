@@ -79,6 +79,18 @@ class WC_Payments_Dev_Tools_CLI extends WP_CLI_Command {
 		update_option( WC_Payments_Dev_Tools::REDIRECT_TO_OPTION, $url );
 		WP_CLI::success( "Enabled WCPay redirect to $url" );
 	}
+
+	/**
+	 * Refresh WCPay account data.
+	 */
+	public function refresh_account_data() {
+		if( ! class_exists( 'WC_Payments' ) ) {
+			WP_CLI::error( 'Unable to update account cache. Activate WooCommerce Payments & try again' );
+			return 1;
+		}
+		WC_Payments::get_account_service()->refresh_account_data();
+		WP_CLI::success( 'Account cache refreshed' );
+	}
 }
 
 WP_CLI::add_command( 'wcpay_dev', WC_Payments_Dev_Tools_CLI::class );
