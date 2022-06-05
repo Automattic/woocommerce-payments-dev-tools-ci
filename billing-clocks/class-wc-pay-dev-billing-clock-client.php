@@ -139,6 +139,6 @@ class WC_Pay_Dev_Billing_Clock_Client {
 	 */
 	public static function get_account_id() {
 		$account_data = get_option( 'wcpay_account_data' );
-		return isset( $account_data['account']['account_id'] ) ? $account_data['account']['account_id'] : '';
+		return isset( $account_data['data']['account_id'] ) ? $account_data['data']['account_id'] : '';
 	}
 }
