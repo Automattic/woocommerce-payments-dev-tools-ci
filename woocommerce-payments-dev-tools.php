@@ -231,7 +231,7 @@ class WC_Payments_Dev_Tools {
 			return;
 		}
 
-		self::get_database_cache()->add( Database_Cache::ACCOUNT_KEY, [] );
+		self::get_database_cache() && self::get_database_cache()->add( Database_Cache::ACCOUNT_KEY, [] );
 	}
 
 	/**
@@ -624,7 +624,7 @@ class WC_Payments_Dev_Tools {
 	 * Clears the wcpay account cache
 	 */
 	private static function clear_account_cache() {
-		self::get_database_cache()->delete( Database_Cache::ACCOUNT_KEY );
+		self::get_database_cache() && self::get_database_cache()->delete( Database_Cache::ACCOUNT_KEY );
 	}
 
 	/**
