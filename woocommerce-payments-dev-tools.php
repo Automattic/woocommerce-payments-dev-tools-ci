@@ -749,7 +749,7 @@ class WC_Payments_Dev_Tools {
 	 *
 	 * @return Database_Cache|null The instance, if the class is available
 	 */
-	private static function get_database_cache(): ?Database_Cache {
+	public static function get_database_cache(): ?Database_Cache {
 		if ( ! class_exists( Database_Cache::class ) ) {
 			return null;
 		}
