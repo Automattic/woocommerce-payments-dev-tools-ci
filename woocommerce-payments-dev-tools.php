@@ -29,6 +29,7 @@ class WC_Payments_Dev_Tools {
 	const SUBSCRIPTIONS = '_wcpay_feature_subscriptions';
 	const CAPITAL = '_wcpay_feature_capital';
 	const DOCUMENTS = '_wcpay_feature_documents';
+	const WOOPAY_OPTION = 'is_woopay_enabled';
 
 	/**
 	 * Helpers for GitHub access
@@ -58,6 +59,7 @@ class WC_Payments_Dev_Tools {
 		add_filter( 'wcpay_api_request_headers', [ __CLASS__, 'add_wcpay_request_headers' ], 10, 1 );
 		add_filter( 'upgrader_pre_download', [ __CLASS__, 'maybe_override_wcpay_version' ], 10, 4 );
 		add_action( 'init', [ __CLASS__, 'maybe_force_disconnected' ] );
+		add_action( 'init', [ __CLASS__, 'maybe_enable_woopay' ] );
 		add_action( 'admin_enqueue_scripts', [ __CLASS__, 'enqueue_scripts' ] );
 
 		if ( class_exists( 'WC_Payments_Subscriptions' ) && get_option( self::BILLING_CLOCKS_OPTION, false ) ) {
@@ -315,6 +317,8 @@ class WC_Payments_Dev_Tools {
 			self::update_option_from_checkbox( self::DOCUMENTS );
 			self::update_option_from_checkbox( self::REDIRECT_OPTION );
 			self::update_option_from_checkbox( self::REDIRECT_LOCALHOST_OPTION );
+			self::enable_or_remove_option_from_checkbox( self::WOOPAY_OPTION );
+
 			if ( isset( $_POST[ self::REDIRECT_TO_OPTION ] ) ) {
 				update_option( self::REDIRECT_TO_OPTION, $_POST[ self::REDIRECT_TO_OPTION ] );
 			}
@@ -332,6 +336,23 @@ class WC_Payments_Dev_Tools {
 
 			wp_safe_redirect( self::get_settings_url() );
 		}
+	}
+
+	public static function maybe_enable_woopay() {
+		if (!self::get_database_cache()) {
+			return;
+		}
+
+		$account_cache = self::get_database_cache()->get(Database_Cache::ACCOUNT_KEY);
+		$is_woopay_enabled = get_option( self::WOOPAY_OPTION, '0' );
+
+		if ('1' === $is_woopay_enabled) {
+			$account_cache['platform_checkout_eligible'] = true;
+		} else {
+			$account_cache['platform_checkout_eligible'] = false;
+		}
+
+		self::get_database_cache()->add( Database_Cache::ACCOUNT_KEY, $account_cache );
 	}
 
 	/**
@@ -472,6 +493,7 @@ class WC_Payments_Dev_Tools {
 					<small>(required for using test clocks)</small>
 					<span id="copyButton" type="button" title="Copy to Clipboard" style="cursor:pointer" data-copy-target="<?php echo esc_attr( self::BILLING_CLOCK_SECRET_KEY_OPTION ) ?>">📋</span>
 				</p>
+				<?php self::render_checkbox( self::WOOPAY_OPTION, 'Enable WooPay', false, ' Sets database cache platform_checkout_eligible' ); ?>
 				<p>
 					<input type="submit" value="Submit" />
 				</p>
@@ -573,6 +595,10 @@ class WC_Payments_Dev_Tools {
 
 		if ( get_option( self::BILLING_CLOCKS_OPTION, true ) ) {
 			$enabled_options[] = 'WCPay Subscription renewal testing';
+		}
+
+		if (get_option( self::WOOPAY_OPTION, true) ) {
+			$enabled_options[] = 'Enable WooPay';
 		}
 
 		if ( empty( $enabled_options ) ) {
