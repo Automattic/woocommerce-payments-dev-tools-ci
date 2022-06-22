@@ -344,6 +344,11 @@ class WC_Payments_Dev_Tools {
 		}
 
 		$account_cache = self::get_database_cache()->get(Database_Cache::ACCOUNT_KEY);
+
+		if (empty($account_cache)) {
+			return;
+		}
+
 		$is_woopay_enabled = get_option( self::WOOPAY_OPTION, '0' );
 
 		if ('1' === $is_woopay_enabled) {
@@ -493,7 +498,7 @@ class WC_Payments_Dev_Tools {
 					<small>(required for using test clocks)</small>
 					<span id="copyButton" type="button" title="Copy to Clipboard" style="cursor:pointer" data-copy-target="<?php echo esc_attr( self::BILLING_CLOCK_SECRET_KEY_OPTION ) ?>">📋</span>
 				</p>
-				<?php self::render_checkbox( self::WOOPAY_OPTION, 'Enable WooPay', false, ' Sets database cache platform_checkout_eligible' ); ?>
+				<?php self::render_checkbox( self::WOOPAY_OPTION, 'Overrides the platform_checkout_eligible flag in the account cache' ); ?>
 				<p>
 					<input type="submit" value="Submit" />
 				</p>
@@ -598,7 +603,7 @@ class WC_Payments_Dev_Tools {
 		}
 
 		if (get_option( self::WOOPAY_OPTION, true) ) {
-			$enabled_options[] = 'Enable WooPay';
+			$enabled_options[] = 'Overrides the platform_checkout_eligible flag in the account cache';
 		}
 
 		if ( empty( $enabled_options ) ) {
