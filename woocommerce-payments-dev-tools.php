@@ -354,7 +354,7 @@ class WC_Payments_Dev_Tools {
 		$should_override_platform_checkout_eligible = get_option( self::WOOPAY_OVERRIDE_PLATFORM_CHECKOUT_ELIGIBLE, '0' );
 		if ('1' === $should_override_platform_checkout_eligible) {
 			$override_platform_checkout_eligible_value = get_option( self::WOOPAY_OVERRIDE_PLATFORM_CHECKOUT_ELIGIBLE_VALUE, '0' );
-			$account_cache['platform_checkout_eligible'] = ('1' === $override_platform_checkout_eligible_value ? true : false);
+			$account_cache['platform_checkout_eligible'] = ('1' === $override_platform_checkout_eligible_value);
 			self::get_database_cache()->add( Database_Cache::ACCOUNT_KEY, $account_cache );
 		}
 	}
@@ -498,7 +498,7 @@ class WC_Payments_Dev_Tools {
 					<span id="copyButton" type="button" title="Copy to Clipboard" style="cursor:pointer" data-copy-target="<?php echo esc_attr( self::BILLING_CLOCK_SECRET_KEY_OPTION ) ?>">📋</span>
 				</p>
 				<div>
-					<?php self::render_checkbox( self::WOOPAY_OVERRIDE_PLATFORM_CHECKOUT_ELIGIBLE, 'Overrides the platform_checkout_eligible flag in the account cache?' ); ?>
+					<?php self::render_checkbox( self::WOOPAY_OVERRIDE_PLATFORM_CHECKOUT_ELIGIBLE, 'Override the platform_checkout_eligible flag in the account cache.' ); ?>
 					<div style="margin-left: 2em;"><?php self::render_checkbox( self::WOOPAY_OVERRIDE_PLATFORM_CHECKOUT_ELIGIBLE_VALUE, 'Set platform_checkout_eligible flag to true, false otherwise.' ); ?></div>
 				</div>
 				<p>
@@ -605,7 +605,7 @@ class WC_Payments_Dev_Tools {
 		}
 
 		if (get_option( self::WOOPAY_OVERRIDE_PLATFORM_CHECKOUT_ELIGIBLE, true) ) {
-			$enabled_options[] = 'Overrides the platform_checkout_eligible flag in the account cache';
+			$enabled_options[] = 'Override the platform_checkout_eligible flag in the account cache';
 		}
 
 		if ( empty( $enabled_options ) ) {
