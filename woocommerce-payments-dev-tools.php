@@ -604,7 +604,7 @@ class WC_Payments_Dev_Tools {
 			$enabled_options[] = 'WCPay Subscription renewal testing';
 		}
 
-		if (get_option( self::WOOPAY_OVERRIDE_PLATFORM_CHECKOUT_ELIGIBLE, true) ) {
+		if (get_option( self::WOOPAY_OVERRIDE_PLATFORM_CHECKOUT_ELIGIBLE, false) ) {
 			$enabled_options[] = 'Override the platform_checkout_eligible flag in the account cache';
 		}
 
