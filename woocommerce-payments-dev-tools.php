@@ -31,6 +31,7 @@ class WC_Payments_Dev_Tools {
 	const DOCUMENTS = '_wcpay_feature_documents';
 	const WOOPAY_OVERRIDE_PLATFORM_CHECKOUT_ELIGIBLE = 'override_platform_checkout_eligible';
 	const WOOPAY_OVERRIDE_PLATFORM_CHECKOUT_ELIGIBLE_VALUE = 'override_platform_checkout_eligible_value';
+	const WOOPAY_SUBSCRIPTIONS_ENABLED_OPTION = '_wcpay_feature_platform_checkout_subscriptions_enabled';
 
 	/**
 	 * Helpers for GitHub access
@@ -320,6 +321,7 @@ class WC_Payments_Dev_Tools {
 			self::update_option_from_checkbox( self::REDIRECT_LOCALHOST_OPTION );
 			self::enable_or_remove_option_from_checkbox( self::WOOPAY_OVERRIDE_PLATFORM_CHECKOUT_ELIGIBLE );
 			self::enable_or_remove_option_from_checkbox( self::WOOPAY_OVERRIDE_PLATFORM_CHECKOUT_ELIGIBLE_VALUE );
+			self::enable_or_remove_option_from_checkbox( self::WOOPAY_SUBSCRIPTIONS_ENABLED_OPTION );
 
 			if ( isset( $_POST[ self::REDIRECT_TO_OPTION ] ) ) {
 				update_option( self::REDIRECT_TO_OPTION, $_POST[ self::REDIRECT_TO_OPTION ] );
@@ -500,6 +502,9 @@ class WC_Payments_Dev_Tools {
 				<div>
 					<?php self::render_checkbox( self::WOOPAY_OVERRIDE_PLATFORM_CHECKOUT_ELIGIBLE, 'Override the platform_checkout_eligible flag in the account cache.' ); ?>
 					<div style="margin-left: 2em;"><?php self::render_checkbox( self::WOOPAY_OVERRIDE_PLATFORM_CHECKOUT_ELIGIBLE_VALUE, 'Set platform_checkout_eligible flag to true, false otherwise.' ); ?></div>
+				</div>
+				<div>
+					<?php self::render_checkbox( self::WOOPAY_SUBSCRIPTIONS_ENABLED_OPTION, 'Enable WooPay for subscriptions (Work in progress)' ); ?>
 				</div>
 				<p>
 					<input type="submit" value="Submit" />
