@@ -7,6 +7,8 @@
  * Author URI: https://woocommerce.com/
  */
 
+ use WCPay\Database_Cache;
+
 class WC_Payments_Dev_Tools {
 	const ID = 'wcpaydev';
 	const DEV_MODE_OPTION = 'wcpaydev_dev_mode';
@@ -17,7 +19,6 @@ class WC_Payments_Dev_Tools {
 	const ACCOUNT_TASK_LIST = '_wcpay_feature_account_overview_task_list';
 	const UPE = '_wcpay_feature_upe';
 	const UPE_ADDITIONAL_PAYMENT_METHODS = '_wcpay_feature_upe_additional_payment_methods';
-	const PLATFORM_CHECKOUT = '_wcpay_feature_platform_checkout';
 	const REDIRECT_TO_OPTION = 'wcpaydev_redirect_to';
 	const PROXY_OPTION = 'wcpaydev_proxy';
 	const PROXY_VIA_OPTION = 'wcpaydev_proxy_via';
@@ -27,6 +28,10 @@ class WC_Payments_Dev_Tools {
 	const BILLING_CLOCK_SECRET_KEY_OPTION = 'wcpay_billing_clock_secret';
 	const SUBSCRIPTIONS = '_wcpay_feature_subscriptions';
 	const CAPITAL = '_wcpay_feature_capital';
+	const DOCUMENTS = '_wcpay_feature_documents';
+	const WOOPAY_OVERRIDE_PLATFORM_CHECKOUT_ELIGIBLE = 'override_platform_checkout_eligible';
+	const WOOPAY_OVERRIDE_PLATFORM_CHECKOUT_ELIGIBLE_VALUE = 'override_platform_checkout_eligible_value';
+	const WOOPAY_SUBSCRIPTIONS_ENABLED_OPTION = '_wcpay_feature_platform_checkout_subscriptions_enabled';
 
 	/**
 	 * Helpers for GitHub access
@@ -37,6 +42,8 @@ class WC_Payments_Dev_Tools {
 	const WCPAY_RELEASE_LIST_FILE        = 'wcpaydev-wcpay-releases.json';
 	const WCPAY_RELEASE_CACHE_TTL_IN_SEC = 600;
 	const WCPAY_ASSET_FILENAME           = 'woocommerce-payments.zip';
+
+	private static $database_cache = null;
 
 	/**
 	 * Entry point of the plugin
@@ -54,6 +61,7 @@ class WC_Payments_Dev_Tools {
 		add_filter( 'wcpay_api_request_headers', [ __CLASS__, 'add_wcpay_request_headers' ], 10, 1 );
 		add_filter( 'upgrader_pre_download', [ __CLASS__, 'maybe_override_wcpay_version' ], 10, 4 );
 		add_action( 'init', [ __CLASS__, 'maybe_force_disconnected' ] );
+		add_action( 'init', [ __CLASS__, 'maybe_override_platform_checkout_eligible' ] );
 		add_action( 'admin_enqueue_scripts', [ __CLASS__, 'enqueue_scripts' ] );
 
 		if ( class_exists( 'WC_Payments_Subscriptions' ) && get_option( self::BILLING_CLOCKS_OPTION, false ) ) {
@@ -212,7 +220,10 @@ class WC_Payments_Dev_Tools {
 	 * @param array $headers
 	 */
 	public static function add_wcpay_request_headers( $headers ) {
-		$headers['Cookie'] = 'XDEBUG_SESSION=XDEBUG_OMATTIC';
+		if ( isset( $_COOKIE['XDEBUG_SESSION'] ) ) {
+			$headers['Cookie'] = 'XDEBUG_SESSION=' . sanitize_text_field( wp_unslash( $_COOKIE['XDEBUG_SESSION'] ) );
+		}
+
 		return $headers;
 	}
 
@@ -224,17 +235,7 @@ class WC_Payments_Dev_Tools {
 			return;
 		}
 
-		if ( ! class_exists( 'WC_Payments_Account' ) ) {
-			return;
-		}
-
-		update_option(
-		        WC_Payments_Account::ACCOUNT_OPTION,
-                [
-                    'account' => [],
-                    'expires' => time() + YEAR_IN_SECONDS,
-                ]
-        );
+		self::get_database_cache() && self::get_database_cache()->add( Database_Cache::ACCOUNT_KEY, [] );
 	}
 
 	/**
@@ -315,9 +316,13 @@ class WC_Payments_Dev_Tools {
 			self::enable_or_remove_option_from_checkbox( self::UPE_ADDITIONAL_PAYMENT_METHODS );
 			self::enable_or_remove_option_from_checkbox( self::SUBSCRIPTIONS );
 			self::update_option_from_checkbox( self::CAPITAL );
-			self::enable_or_remove_option_from_checkbox( self::PLATFORM_CHECKOUT );
+			self::update_option_from_checkbox( self::DOCUMENTS );
 			self::update_option_from_checkbox( self::REDIRECT_OPTION );
 			self::update_option_from_checkbox( self::REDIRECT_LOCALHOST_OPTION );
+			self::enable_or_remove_option_from_checkbox( self::WOOPAY_OVERRIDE_PLATFORM_CHECKOUT_ELIGIBLE );
+			self::enable_or_remove_option_from_checkbox( self::WOOPAY_OVERRIDE_PLATFORM_CHECKOUT_ELIGIBLE_VALUE );
+			self::enable_or_remove_option_from_checkbox( self::WOOPAY_SUBSCRIPTIONS_ENABLED_OPTION );
+
 			if ( isset( $_POST[ self::REDIRECT_TO_OPTION ] ) ) {
 				update_option( self::REDIRECT_TO_OPTION, $_POST[ self::REDIRECT_TO_OPTION ] );
 			}
@@ -334,6 +339,25 @@ class WC_Payments_Dev_Tools {
 			update_option( self::BILLING_CLOCK_SECRET_KEY_OPTION, $_POST[ self::BILLING_CLOCK_SECRET_KEY_OPTION ] ?? '' );
 
 			wp_safe_redirect( self::get_settings_url() );
+		}
+	}
+
+	public static function maybe_override_platform_checkout_eligible() {
+		if (!self::get_database_cache()) {
+			return;
+		}
+
+		$account_cache = self::get_database_cache()->get(Database_Cache::ACCOUNT_KEY);
+
+		if (empty($account_cache)) {
+			return;
+		}
+
+		$should_override_platform_checkout_eligible = get_option( self::WOOPAY_OVERRIDE_PLATFORM_CHECKOUT_ELIGIBLE, '0' );
+		if ('1' === $should_override_platform_checkout_eligible) {
+			$override_platform_checkout_eligible_value = get_option( self::WOOPAY_OVERRIDE_PLATFORM_CHECKOUT_ELIGIBLE_VALUE, '0' );
+			$account_cache['platform_checkout_eligible'] = ('1' === $override_platform_checkout_eligible_value);
+			self::get_database_cache()->add( Database_Cache::ACCOUNT_KEY, $account_cache );
 		}
 	}
 
@@ -412,9 +436,9 @@ class WC_Payments_Dev_Tools {
 				self::render_checkbox( self::UPE_ADDITIONAL_PAYMENT_METHODS, 'Add UPE additional payment methods' );
 				self::render_checkbox( self::SUBSCRIPTIONS, 'Enable WCPay subscriptions' );
 				self::render_checkbox( self::CAPITAL, 'Enable Stripe Capital' );
-				self::render_checkbox( self::PLATFORM_CHECKOUT, 'Enable platform checkout support' );
-				self::render_checkbox( self::REDIRECT_OPTION, 'Enable API request redirection' );
+				self::render_checkbox( self::DOCUMENTS, 'Enable WCPay Documents section' );
 				self::render_checkbox( self::REDIRECT_LOCALHOST_OPTION, 'Enable localhost request redirection to host.docker.internal' );
+				self::render_checkbox( self::REDIRECT_OPTION, 'Enable API request redirection' );
 				?>
 				<p>
 					<label for="wcpaydev-redirect-to">
@@ -475,6 +499,13 @@ class WC_Payments_Dev_Tools {
 					<small>(required for using test clocks)</small>
 					<span id="copyButton" type="button" title="Copy to Clipboard" style="cursor:pointer" data-copy-target="<?php echo esc_attr( self::BILLING_CLOCK_SECRET_KEY_OPTION ) ?>">📋</span>
 				</p>
+				<div>
+					<?php self::render_checkbox( self::WOOPAY_OVERRIDE_PLATFORM_CHECKOUT_ELIGIBLE, 'Override the platform_checkout_eligible flag in the account cache.' ); ?>
+					<div style="margin-left: 2em;"><?php self::render_checkbox( self::WOOPAY_OVERRIDE_PLATFORM_CHECKOUT_ELIGIBLE_VALUE, 'Set platform_checkout_eligible flag to true, false otherwise.' ); ?></div>
+				</div>
+				<div>
+					<?php self::render_checkbox( self::WOOPAY_SUBSCRIPTIONS_ENABLED_OPTION, 'Enable WooPay for subscriptions (Work in progress)' ); ?>
+				</div>
 				<p>
 					<input type="submit" value="Submit" />
 				</p>
@@ -491,7 +522,7 @@ class WC_Payments_Dev_Tools {
 			if ( class_exists( 'WC_Payments_Account' ) ): ?>
 			<p>
 				<h2>Account cache contents <a href="<?php echo wp_nonce_url( add_query_arg( [ 'wcpaydev-clear-cache' => '1' ], self::get_settings_url() ), 'wcpaydev-clear-cache' ); ?>">(clear)</a>:</h2>
-				<textarea rows="15" cols="100"><?php echo esc_html( var_export( get_option( WC_Payments_Account::ACCOUNT_OPTION ), true ) ) ?></textarea>
+				<textarea rows="15" cols="100"><?php echo esc_html( var_export( get_option( Database_Cache::ACCOUNT_KEY ), true ) ) ?></textarea>
 			</p>
 			<p>
 					<h2>Gateway settings <a href="<?php echo WC_Payment_Gateway_WCPay::get_settings_url(); ?>">(edit)</a>:</h2>
@@ -554,6 +585,10 @@ class WC_Payments_Dev_Tools {
 			$enabled_options[] = 'Stripe Capital enabled';
 		}
 
+		if ( get_option( self::DOCUMENTS, false ) ) {
+			$enabled_options[] = 'Documents section enabled';
+		}
+
 		if ( get_option( self::FORCE_ONBOARDING_OPTION, false ) ) {
 			$enabled_options[] = 'Forced onboarding';
 		}
@@ -572,6 +607,11 @@ class WC_Payments_Dev_Tools {
 
 		if ( get_option( self::BILLING_CLOCKS_OPTION, true ) ) {
 			$enabled_options[] = 'WCPay Subscription renewal testing';
+		}
+
+		if (get_option( self::WOOPAY_OVERRIDE_PLATFORM_CHECKOUT_ELIGIBLE, '0') ) {
+			$overriding_value  = get_option( self::WOOPAY_OVERRIDE_PLATFORM_CHECKOUT_ELIGIBLE_VALUE, '0' ) ? 'true' : 'false';
+			$enabled_options[] = 'Overriding the platform_checkout_eligible flag in the account cache to ' . $overriding_value;
 		}
 
 		if ( empty( $enabled_options ) ) {
@@ -623,10 +663,7 @@ class WC_Payments_Dev_Tools {
 	 * Clears the wcpay account cache
 	 */
 	private static function clear_account_cache() {
-		if ( ! class_exists( 'WC_Payments_Account' ) ) {
-			return;
-		}
-		delete_option( WC_Payments_Account::ACCOUNT_OPTION );
+		self::get_database_cache() && self::get_database_cache()->delete( Database_Cache::ACCOUNT_KEY );
 	}
 
 	/**
@@ -744,6 +781,23 @@ class WC_Payments_Dev_Tools {
 		}
 
 		return Jetpack_Options::get_option( 'id' );
+	}
+
+	/**
+	 * Gets an instance of Database_Cache
+	 *
+	 * @return Database_Cache|null The instance, if the class is available
+	 */
+	public static function get_database_cache(): ?Database_Cache {
+		if ( ! class_exists( Database_Cache::class ) ) {
+			return null;
+		}
+
+		if ( null === self::$database_cache ) {
+			self::$database_cache = new Database_Cache();
+		}
+
+		return self::$database_cache;
 	}
 
 	/**

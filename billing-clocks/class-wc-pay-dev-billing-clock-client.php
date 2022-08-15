@@ -138,7 +138,10 @@ class WC_Pay_Dev_Billing_Clock_Client {
 	 * Get the WC Pay account id associated with the site
 	 */
 	public static function get_account_id() {
-		$account_data = get_option( 'wcpay_account_data' );
-		return isset( $account_data['account']['account_id'] ) ? $account_data['account']['account_id'] : '';
+		$db_cache = WC_Payments_Dev_Tools::get_database_cache();
+		if ( null === $db_cache ) { 
+			return ''; 
+		}
+		return $db_cache->get( WCPay\Database_Cache::ACCOUNT_KEY )['account_id'] ?? '';
 	}
 }

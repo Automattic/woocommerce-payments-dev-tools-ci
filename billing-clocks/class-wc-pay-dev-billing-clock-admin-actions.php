@@ -33,6 +33,12 @@ class WC_Pay_Dev_Billing_Clock_Admin_Actions {
 	 * @param WC_Subscription $subscription
 	 */
 	public static function display_current_clock_time( $subscription ) {
+		$stripe_subscription = WC_Pay_Dev_Billing_Renewal_Tester::get_wcpay_subscription( $subscription );
+
+		if ( ! $stripe_subscription ) {
+			return;
+		}
+
 		$subscription_clock = WC_Pay_Dev_Billing_Renewal_Tester::get_subscription_clock( $subscription );
 
 		if ( ! $subscription_clock ) {
@@ -49,12 +55,6 @@ class WC_Pay_Dev_Billing_Clock_Admin_Actions {
 			echo '<hr><h3 style="text-align: center;">🛠 Dev Testing Mode: <span style="color: #dc9e10;">Disabled</span></h3>';
 			echo $enable_button;
 			echo '<hr>';
-			return;
-		}
-
-		$stripe_subscription = WC_Pay_Dev_Billing_Renewal_Tester::get_wcpay_subscription( $subscription );
-
-		if ( ! $stripe_subscription ) {
 			return;
 		}
 
@@ -106,8 +106,15 @@ class WC_Pay_Dev_Billing_Clock_Admin_Actions {
 	public static function add_subscription_actions( $actions ) {
 		global $theorder;
 
-		// Check that this is a stripe billing subscription
+		// Check that this is a subscription.
 		if ( ! wcs_is_subscription( $theorder ) ) {
+			return $actions;
+		}
+
+		$stripe_subscription = WC_Pay_Dev_Billing_Renewal_Tester::get_wcpay_subscription( $theorder );
+
+		// Check that this is a WCPay subscription.
+		if ( ! $stripe_subscription ) {
 			return $actions;
 		}
 
@@ -122,15 +129,9 @@ class WC_Pay_Dev_Billing_Clock_Admin_Actions {
 		// Remove the default renewal processing actions.
 		unset( $actions['wcs_process_renewal'], $actions['wcs_create_pending_renewal'], $actions['wcs_create_pending_parent'] );
 
-		$stripe_subscription = WC_Pay_Dev_Billing_Renewal_Tester::get_wcpay_subscription( $theorder );
-
-		if ( ! $stripe_subscription ) {
-			return;
-		}
-
 		// Subscriptions which are past due have a failed last invoice that will need to be handled first.
 		if ( 'past_due' === $stripe_subscription['status'] ) {
-			return;
+			return $actions;
 		}
 
 		// Add an action depending on what the next event should be.
