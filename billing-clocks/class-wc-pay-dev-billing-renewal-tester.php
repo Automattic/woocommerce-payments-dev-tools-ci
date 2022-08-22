@@ -340,7 +340,10 @@ class WC_Pay_Dev_Billing_Renewal_Tester {
 
 		if ( $invoice_id ) {
 			// Update the status of the invoice but don't charge the customer by using paid_out_of_band parameter.
-			WC_Payments::get_payments_api_client()->charge_invoice( $invoice_id, [ 'paid_out_of_band' => 'true' ] );
+			$invoice = WC_Payments::get_payments_api_client()->get_invoice( $invoice_id );
+			if ( $invoice && ! $invoice['paid'] ) {
+				WC_Payments::get_payments_api_client()->charge_invoice( $invoice_id, [ 'paid_out_of_band' => 'true' ] );
+			}
 		}
 	}
 
