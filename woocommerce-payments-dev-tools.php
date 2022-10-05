@@ -157,9 +157,21 @@ class WC_Payments_Dev_Tools {
 		}
 
 		if ( get_option( self::REDIRECT_OPTION, false ) && // detect the wcpay requests.
-			1 === preg_match( '/^https?:\/\/public-api\.wordpress\.com\/(.+?(?:wcpay|tumblrpay).+)/', $url, $matches ) ) {
+		     1 === preg_match( '/^https?:\/\/public-api\.wordpress\.com\/(.+?(?:wcpay|tumblrpay).+)/', $url, $matches ) ) {
 			$redirect_to = trailingslashit( self::get_redirect_to() );
-			return wp_remote_request( $redirect_to . $matches[1], $args );
+			$response = wp_remote_request( $redirect_to . $matches[1], $args );
+
+			if ( is_wp_error( $response ) || empty( $response ) || empty( $response['body'] ) || $response['response']['code'] != 200 ) {
+				file_put_contents( 'remote_log.txt', "Redirect Error:" . PHP_EOL, FILE_APPEND );
+				file_put_contents( 'remote_log.txt', $redirect_to . $matches[1] . PHP_EOL, FILE_APPEND );
+				file_put_contents( 'remote_log.txt', json_encode( $args ) . PHP_EOL, FILE_APPEND );
+				file_put_contents( 'remote_log.txt', json_encode( $response ) . PHP_EOL, FILE_APPEND );
+				file_put_contents( 'remote_log.txt', PHP_EOL . PHP_EOL, FILE_APPEND );
+
+				return $response;
+			}
+
+			return $response;
 		}
 
 		if ( get_option( self::REDIRECT_LOCALHOST_OPTION, false ) &&
@@ -520,7 +532,7 @@ class WC_Payments_Dev_Tools {
 				<textarea rows="15" cols="100"><?php echo esc_html( var_export( get_option( Database_Cache::ACCOUNT_KEY ), true ) ) ?></textarea>
 			</p>
 			<p>
-					<h2>Gateway settings <a href="<?php echo WC_Payment_Gateway_WCPay::get_settings_url(); ?>">(edit)</a>:</h2>
+					<h2>Gateway settings <a href="<?php echo WC_Payments_Admin_Settings::get_settings_url(); ?>">(edit)</a>:</h2>
 					<textarea rows="15" cols="100"><?php echo esc_html( var_export( get_option( 'woocommerce_woocommerce_payments_settings' ), true ) ) ?></textarea>
 			</p>
 			<p>
@@ -530,7 +542,7 @@ class WC_Payments_Dev_Tools {
 				<h2><a href="<?php echo wp_nonce_url( add_query_arg( [ 'wcpaydev-fetch-live-rates' => '1' ], self::get_settings_url() ), 'wcpaydev-fetch-live-rates' ); ?>">Fetch live currency rates</a></h2>
 			</p>
 			<p>
-				<h2><a href="<?php echo wp_nonce_url( add_query_arg( [ 'wcpay-connect' => '1' ], WC_Payment_Gateway_WCPay::get_settings_url() ), 'wcpay-connect' ) ?>">Reonboard</a></h2>
+				<h2><a href="<?php echo wp_nonce_url( add_query_arg( [ 'wcpay-connect' => '1' ], WC_Payments_Admin_Settings::get_settings_url() ), 'wcpay-connect' ) ?>">Reonboard</a></h2>
 			</p>
 			<p>
 				<h2><a href="<?php echo self::get_log_url(); ?>">Latest logs</a></h2>
@@ -869,3 +881,10 @@ add_action( 'plugins_loaded', 'wcpay_dev_tools_init', 999 );
 // Register these filters here since user authentication happens before our init function gets a chance to run.
 add_filter( 'determine_current_user', [ WC_Payments_Dev_Tools::class, 'mock_rest_authenticate' ], 999 );
 add_filter( 'rest_authentication_errors', [ WC_Payments_Dev_Tools::class, 'mock_rest_authentication_errors' ], 999 );
+
+
+function __set_curl_nofollow( &$handle )
+{
+	curl_setopt( $handle, CURLOPT_FOLLOWLOCATION, true );
+}
+add_action( 'http_api_curl', '__set_curl_nofollow' );
