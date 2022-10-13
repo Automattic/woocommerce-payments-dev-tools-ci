@@ -429,6 +429,12 @@ class WC_Payments_Dev_Tools {
 	 */
 	private static function admin_page_output() {
 
+		if ( class_exists( 'WC_Payments_Admin_Settings' ) ) {
+			$wcpayments_settings_url = WC_Payments_Admin_Settings::get_settings_url();
+		} else {
+			$wcpayments_settings_url = WC_Payment_Gateway_WCPay::get_settings_url();
+		}
+
 		$wcpay_release_tag = self::get_wcpay_release_tag();
 		?>
 		<h1>WCPay Dev Utils</h1>
@@ -532,7 +538,7 @@ class WC_Payments_Dev_Tools {
 				<textarea rows="15" cols="100"><?php echo esc_html( var_export( get_option( Database_Cache::ACCOUNT_KEY ), true ) ) ?></textarea>
 			</p>
 			<p>
-					<h2>Gateway settings <a href="<?php echo WC_Payments_Admin_Settings::get_settings_url(); ?>">(edit)</a>:</h2>
+					<h2>Gateway settings <a href="<?php echo $wcpayments_settings_url; ?>">(edit)</a>:</h2>
 					<textarea rows="15" cols="100"><?php echo esc_html( var_export( get_option( 'woocommerce_woocommerce_payments_settings' ), true ) ) ?></textarea>
 			</p>
 			<p>
@@ -542,7 +548,7 @@ class WC_Payments_Dev_Tools {
 				<h2><a href="<?php echo wp_nonce_url( add_query_arg( [ 'wcpaydev-fetch-live-rates' => '1' ], self::get_settings_url() ), 'wcpaydev-fetch-live-rates' ); ?>">Fetch live currency rates</a></h2>
 			</p>
 			<p>
-				<h2><a href="<?php echo wp_nonce_url( add_query_arg( [ 'wcpay-connect' => '1' ], WC_Payments_Admin_Settings::get_settings_url() ), 'wcpay-connect' ) ?>">Reonboard</a></h2>
+				<h2><a href="<?php echo wp_nonce_url( add_query_arg( [ 'wcpay-connect' => '1' ], $wcpayments_settings_url ), 'wcpay-connect' ) ?>">Reonboard</a></h2>
 			</p>
 			<p>
 				<h2><a href="<?php echo self::get_log_url(); ?>">Latest logs</a></h2>
