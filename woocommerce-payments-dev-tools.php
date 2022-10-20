@@ -887,10 +887,3 @@ add_action( 'plugins_loaded', 'wcpay_dev_tools_init', 999 );
 // Register these filters here since user authentication happens before our init function gets a chance to run.
 add_filter( 'determine_current_user', [ WC_Payments_Dev_Tools::class, 'mock_rest_authenticate' ], 999 );
 add_filter( 'rest_authentication_errors', [ WC_Payments_Dev_Tools::class, 'mock_rest_authentication_errors' ], 999 );
-
-
-function __set_curl_nofollow( &$handle )
-{
-	curl_setopt( $handle, CURLOPT_FOLLOWLOCATION, true );
-}
-add_action( 'http_api_curl', '__set_curl_nofollow' );
