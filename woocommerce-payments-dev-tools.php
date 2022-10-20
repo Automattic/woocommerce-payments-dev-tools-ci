@@ -157,21 +157,9 @@ class WC_Payments_Dev_Tools {
 		}
 
 		if ( get_option( self::REDIRECT_OPTION, false ) && // detect the wcpay requests.
-		     1 === preg_match( '/^https?:\/\/public-api\.wordpress\.com\/(.+?(?:wcpay|tumblrpay).+)/', $url, $matches ) ) {
+			1 === preg_match( '/^https?:\/\/public-api\.wordpress\.com\/(.+?(?:wcpay|tumblrpay).+)/', $url, $matches ) ) {
 			$redirect_to = trailingslashit( self::get_redirect_to() );
-			$response = wp_remote_request( $redirect_to . $matches[1], $args );
-
-			if ( is_wp_error( $response ) || empty( $response ) || empty( $response['body'] ) || $response['response']['code'] != 200 ) {
-				file_put_contents( 'remote_log.txt', "Redirect Error:" . PHP_EOL, FILE_APPEND );
-				file_put_contents( 'remote_log.txt', $redirect_to . $matches[1] . PHP_EOL, FILE_APPEND );
-				file_put_contents( 'remote_log.txt', json_encode( $args ) . PHP_EOL, FILE_APPEND );
-				file_put_contents( 'remote_log.txt', json_encode( $response ) . PHP_EOL, FILE_APPEND );
-				file_put_contents( 'remote_log.txt', PHP_EOL . PHP_EOL, FILE_APPEND );
-
-				return $response;
-			}
-
-			return $response;
+			return wp_remote_request( $redirect_to . $matches[1], $args );
 		}
 
 		if ( get_option( self::REDIRECT_LOCALHOST_OPTION, false ) &&
