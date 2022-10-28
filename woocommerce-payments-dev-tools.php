@@ -31,6 +31,7 @@ class WC_Payments_Dev_Tools {
 	const DOCUMENTS = '_wcpay_feature_documents';
 	const WOOPAY_OVERRIDE_PLATFORM_CHECKOUT_ELIGIBLE = 'override_platform_checkout_eligible';
 	const WOOPAY_OVERRIDE_PLATFORM_CHECKOUT_ELIGIBLE_VALUE = 'override_platform_checkout_eligible_value';
+	const WOOPAY_EXPRESS_CHECKOUT_FLAG_NAME = '_wcpay_feature_woopay_express_checkout';
 
 	/**
 	 * Helpers for GitHub access
@@ -320,6 +321,7 @@ class WC_Payments_Dev_Tools {
 			self::update_option_from_checkbox( self::REDIRECT_LOCALHOST_OPTION );
 			self::enable_or_remove_option_from_checkbox( self::WOOPAY_OVERRIDE_PLATFORM_CHECKOUT_ELIGIBLE );
 			self::enable_or_remove_option_from_checkbox( self::WOOPAY_OVERRIDE_PLATFORM_CHECKOUT_ELIGIBLE_VALUE );
+			self::enable_or_remove_option_from_checkbox( self::WOOPAY_EXPRESS_CHECKOUT_FLAG_NAME );
 
 			if ( isset( $_POST[ self::REDIRECT_TO_OPTION ] ) ) {
 				update_option( self::REDIRECT_TO_OPTION, $_POST[ self::REDIRECT_TO_OPTION ] );
@@ -504,8 +506,10 @@ class WC_Payments_Dev_Tools {
 					<span id="copyButton" type="button" title="Copy to Clipboard" style="cursor:pointer" data-copy-target="<?php echo esc_attr( self::BILLING_CLOCK_SECRET_KEY_OPTION ) ?>">📋</span>
 				</p>
 				<div>
+					<h2>Platform Checkout</h2>
 					<?php self::render_checkbox( self::WOOPAY_OVERRIDE_PLATFORM_CHECKOUT_ELIGIBLE, 'Override the platform_checkout_eligible flag in the account cache.' ); ?>
 					<div style="margin-left: 2em;"><?php self::render_checkbox( self::WOOPAY_OVERRIDE_PLATFORM_CHECKOUT_ELIGIBLE_VALUE, 'Set platform_checkout_eligible flag to true, false otherwise.' ); ?></div>
+					<?php self::render_checkbox( self::WOOPAY_EXPRESS_CHECKOUT_FLAG_NAME, 'Enable the WooPay Express Checkout button.' ); ?>
 				</div>
 				<p>
 					<input type="submit" value="Submit" />
@@ -613,6 +617,10 @@ class WC_Payments_Dev_Tools {
 		if (get_option( self::WOOPAY_OVERRIDE_PLATFORM_CHECKOUT_ELIGIBLE, '0') ) {
 			$overriding_value  = get_option( self::WOOPAY_OVERRIDE_PLATFORM_CHECKOUT_ELIGIBLE_VALUE, '0' ) ? 'true' : 'false';
 			$enabled_options[] = 'Overriding the platform_checkout_eligible flag in the account cache to ' . $overriding_value;
+		}
+
+		if (get_option( self::WOOPAY_EXPRESS_CHECKOUT_FLAG_NAME, '0') ) {
+			$enabled_options[] = 'WooPay Express Checkout button';
 		}
 
 		if ( empty( $enabled_options ) ) {
