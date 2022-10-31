@@ -619,7 +619,7 @@ class WC_Payments_Dev_Tools {
 			$enabled_options[] = 'Overriding the platform_checkout_eligible flag in the account cache to ' . $overriding_value;
 		}
 
-		if (get_option( self::WOOPAY_EXPRESS_CHECKOUT_FLAG_NAME, '0') ) {
+		if ( get_option( self::WOOPAY_EXPRESS_CHECKOUT_FLAG_NAME, '0') ) {
 			$enabled_options[] = 'WooPay Express Checkout button';
 		}
 
