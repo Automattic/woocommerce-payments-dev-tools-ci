@@ -32,7 +32,7 @@ class WC_Payments_Dev_Tools {
 	const WOOPAY_OVERRIDE_PLATFORM_CHECKOUT_ELIGIBLE = 'override_platform_checkout_eligible';
 	const WOOPAY_OVERRIDE_PLATFORM_CHECKOUT_ELIGIBLE_VALUE = 'override_platform_checkout_eligible_value';
 	const WOOPAY_EXPRESS_CHECKOUT_FLAG_NAME = '_wcpay_feature_woopay_express_checkout';
-    const RETRY_SERVER_WP_CRON_REDIRECTS = 'retry_server_wp_cron_redirects';
+        const RETRY_SERVER_WP_CRON_REDIRECTS = 'retry_server_wp_cron_redirects';
 
 	/**
 	 * Helpers for GitHub access
@@ -44,7 +44,7 @@ class WC_Payments_Dev_Tools {
 	const WCPAY_RELEASE_CACHE_TTL_IN_SEC = 600;
 	const WCPAY_ASSET_FILENAME           = 'woocommerce-payments.zip';
 
-    const SERVER_API_TIMEOUT_SECONDS      = 70;
+        const SERVER_API_TIMEOUT_SECONDS      = 70;
 
 	private static $database_cache = null;
 
@@ -63,7 +63,7 @@ class WC_Payments_Dev_Tools {
 		add_filter( 'wc_payments_get_onboarding_data_args', [ __CLASS__, 'maybe_force_on_boarding' ], 10, 1 );
 		add_filter( 'wcpay_api_request_headers', [ __CLASS__, 'add_wcpay_request_headers' ], 10, 1 );
 		add_filter( 'upgrader_pre_download', [ __CLASS__, 'maybe_override_wcpay_version' ], 10, 4 );
-        add_filter( 'wcpay_api_request_response', [ __CLASS__, 'maybe_retry_redirection_request_due_to_cronjob'], 10, 4);
+                add_filter( 'wcpay_api_request_response', [ __CLASS__, 'maybe_retry_redirection_request_due_to_cronjob'], 10, 4);
 		add_action( 'init', [ __CLASS__, 'maybe_force_disconnected' ] );
 		add_action( 'init', [ __CLASS__, 'maybe_override_platform_checkout_eligible' ] );
 		add_action( 'admin_enqueue_scripts', [ __CLASS__, 'enqueue_scripts' ] );
@@ -242,30 +242,45 @@ class WC_Payments_Dev_Tools {
 		self::get_database_cache() && self::get_database_cache()->add( Database_Cache::ACCOUNT_KEY, [] );
 	}
 
-    public static function maybe_retry_redirection_request_due_to_cronjob($response, $method, $url, $api) {
-        if ( ! get_option( self::RETRY_SERVER_WP_CRON_REDIRECTS, false ) ) {
+        /**
+         * If the redirection option is turned on, check for 302 response code and doing_wp_cron query parameter and if
+         * both are present - retry this request, as it's caused by the WP Cron job running on the local WCPay Server env.
+         *
+         * @param array $response
+         * @param string $method
+         * @param string $url
+         * @param string $api
+         */
+        public static function maybe_retry_redirection_request_due_to_cronjob($response, $method, $url, $api) {
+            if ( ! get_option( self::RETRY_SERVER_WP_CRON_REDIRECTS, false ) ) {
+                return $response;
+            }
+
+            if ( wp_remote_retrieve_response_code( $response ) == 302 && self::is_wp_cron_query_parameter_present( $response ) ) {
+                $url_with_injected_blog_id = str_replace('%s', self::get_blog_id(), $url);
+
+                return wp_remote_request(
+                    $url_with_injected_blog_id,
+                    [
+                        'method' => $method,
+                        'timeout' => self::SERVER_API_TIMEOUT_SECONDS,
+                        'connect_timeout' => self::SERVER_API_TIMEOUT_SECONDS
+                    ]
+                );
+            }
+
             return $response;
         }
 
-        if ( wp_remote_retrieve_response_code( $response ) == 302 && self::is_wp_cron_query_parameter_present( $response ) ) {
-            $url_with_injected_blog_id = str_replace('%s', self::get_blog_id(), $url);
-
-            return wp_remote_request(
-                $url_with_injected_blog_id,
-                [
-                    'method' => $method,
-                    'timeout' => self::SERVER_API_TIMEOUT_SECONDS,
-                    'connect_timeout' => self::SERVER_API_TIMEOUT_SECONDS
-                ]
-            );
+        /**
+         * True if Location header is present and contains doing_wp_cron query parameter, false otherwise
+         *
+         * @param $response
+         * @return bool
+         */
+        private static function is_wp_cron_query_parameter_present( $response ) {
+            return isset( $response['headers']['location'] ) && strpos($response['headers']['location'], 'doing_wp_cron') !== false;
         }
-
-        return $response;
-    }
-
-    private static function is_wp_cron_query_parameter_present( $response ) {
-        return isset( $response['headers']['location'] ) && strpos($response['headers']['location'], 'doing_wp_cron') !== false;
-    }
 
 	/**
 	 * Overrides plugin api to inject a download link to a specified WCPay
@@ -351,7 +366,7 @@ class WC_Payments_Dev_Tools {
 			self::enable_or_remove_option_from_checkbox( self::WOOPAY_OVERRIDE_PLATFORM_CHECKOUT_ELIGIBLE );
 			self::enable_or_remove_option_from_checkbox( self::WOOPAY_OVERRIDE_PLATFORM_CHECKOUT_ELIGIBLE_VALUE );
 			self::enable_or_remove_option_from_checkbox( self::WOOPAY_EXPRESS_CHECKOUT_FLAG_NAME );
-            self::update_option_from_checkbox(self::RETRY_SERVER_WP_CRON_REDIRECTS);
+                self::update_option_from_checkbox(self::RETRY_SERVER_WP_CRON_REDIRECTS);
 
 			if ( isset( $_POST[ self::REDIRECT_TO_OPTION ] ) ) {
 				update_option( self::REDIRECT_TO_OPTION, $_POST[ self::REDIRECT_TO_OPTION ] );
@@ -467,7 +482,7 @@ class WC_Payments_Dev_Tools {
 				self::render_checkbox( self::FORCE_ONBOARDING_OPTION, 'Force onboarding', false, '(Check this to trigger the KYC flow when clicking on the ‘Reonboard’ link below)' );
 				self::render_checkbox( self::FORCE_DISCONNECTED_OPTION, 'Force the plugin to act as disconnected from WCPay' );
 				self::render_checkbox( self::ACCOUNT_TASK_LIST, 'Enable account overview task list' );
-                self::render_checkbox( self::RETRY_SERVER_WP_CRON_REDIRECTS, 'Retry server WP Cron redirects', false );
+                    self::render_checkbox( self::RETRY_SERVER_WP_CRON_REDIRECTS, 'Retry server WP Cron redirects', false );
 				$has_upe_been_manually_disabled_text = 'disabled' === get_option( self::UPE ) ? ' (was disabled through WCPay, un-check to reset or save to re-enable)' : '';
 				self::render_checkbox( self::UPE, "Enable UPE checkout", false, $has_upe_been_manually_disabled_text );
 				self::render_checkbox( self::UPE_ADDITIONAL_PAYMENT_METHODS, 'Add UPE additional payment methods' );
