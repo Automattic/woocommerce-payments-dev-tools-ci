@@ -44,6 +44,8 @@ class WC_Payments_Dev_Tools {
 	const WCPAY_RELEASE_CACHE_TTL_IN_SEC = 600;
 	const WCPAY_ASSET_FILENAME           = 'woocommerce-payments.zip';
 
+    const SERVER_API_TIMEOUT_SECONDS      = 70;
+
 	private static $database_cache = null;
 
 	/**
@@ -252,8 +254,8 @@ class WC_Payments_Dev_Tools {
                 $url_with_injected_blog_id,
                 [
                     'method' => $method,
-                    'timeout' => 70,
-                    'connect_timeout' => 70
+                    'timeout' => self::SERVER_API_TIMEOUT_SECONDS,
+                    'connect_timeout' => self::SERVER_API_TIMEOUT_SECONDS
                 ]
             );
         }
@@ -335,7 +337,6 @@ class WC_Payments_Dev_Tools {
 		if ( isset( $_POST['wcpaydev-save-settings'] ) ) {
 			check_admin_referer( 'wcpaydev-save-settings', 'wcpaydev-save-settings' );
 
-            self::update_option_from_checkbox(self::RETRY_SERVER_WP_CRON_REDIRECTS);
 			self::update_option_from_checkbox( self::DEV_MODE_OPTION );
 			self::update_option_from_checkbox( self::FORCE_ONBOARDING_OPTION );
 			self::update_option_from_checkbox( self::FORCE_DISCONNECTED_OPTION );
@@ -350,6 +351,7 @@ class WC_Payments_Dev_Tools {
 			self::enable_or_remove_option_from_checkbox( self::WOOPAY_OVERRIDE_PLATFORM_CHECKOUT_ELIGIBLE );
 			self::enable_or_remove_option_from_checkbox( self::WOOPAY_OVERRIDE_PLATFORM_CHECKOUT_ELIGIBLE_VALUE );
 			self::enable_or_remove_option_from_checkbox( self::WOOPAY_EXPRESS_CHECKOUT_FLAG_NAME );
+            self::update_option_from_checkbox(self::RETRY_SERVER_WP_CRON_REDIRECTS);
 
 			if ( isset( $_POST[ self::REDIRECT_TO_OPTION ] ) ) {
 				update_option( self::REDIRECT_TO_OPTION, $_POST[ self::REDIRECT_TO_OPTION ] );
@@ -465,7 +467,7 @@ class WC_Payments_Dev_Tools {
 				self::render_checkbox( self::FORCE_ONBOARDING_OPTION, 'Force onboarding', false, '(Check this to trigger the KYC flow when clicking on the ‘Reonboard’ link below)' );
 				self::render_checkbox( self::FORCE_DISCONNECTED_OPTION, 'Force the plugin to act as disconnected from WCPay' );
 				self::render_checkbox( self::ACCOUNT_TASK_LIST, 'Enable account overview task list' );
-                self::render_checkbox( self::RETRY_SERVER_WP_CRON_REDIRECTS, 'Retry server WP Cron redirects', true );
+                self::render_checkbox( self::RETRY_SERVER_WP_CRON_REDIRECTS, 'Retry server WP Cron redirects', false );
 				$has_upe_been_manually_disabled_text = 'disabled' === get_option( self::UPE ) ? ' (was disabled through WCPay, un-check to reset or save to re-enable)' : '';
 				self::render_checkbox( self::UPE, "Enable UPE checkout", false, $has_upe_been_manually_disabled_text );
 				self::render_checkbox( self::UPE_ADDITIONAL_PAYMENT_METHODS, 'Add UPE additional payment methods' );
