@@ -7,7 +7,7 @@
  * Author URI: https://woocommerce.com/
  */
 
- use WCPay\Database_Cache;
+use WCPay\Database_Cache;
 
 class WC_Payments_Dev_Tools {
 	const ID = 'wcpaydev';
@@ -32,7 +32,8 @@ class WC_Payments_Dev_Tools {
 	const WOOPAY_OVERRIDE_PLATFORM_CHECKOUT_ELIGIBLE = 'override_platform_checkout_eligible';
 	const WOOPAY_OVERRIDE_PLATFORM_CHECKOUT_ELIGIBLE_VALUE = 'override_platform_checkout_eligible_value';
 	const WOOPAY_EXPRESS_CHECKOUT_FLAG_NAME = '_wcpay_feature_woopay_express_checkout';
-        const RETRY_SERVER_WP_CRON_REDIRECTS = 'retry_server_wp_cron_redirects';
+	const PROGRESSIVE_ONBOARDING_FLAG_NAME = '_wcpay_feature_progressive_onboarding';
+	const RETRY_SERVER_WP_CRON_REDIRECTS = 'retry_server_wp_cron_redirects';
 
 	/**
 	 * Helpers for GitHub access
@@ -63,7 +64,7 @@ class WC_Payments_Dev_Tools {
 		add_filter( 'wc_payments_get_onboarding_data_args', [ __CLASS__, 'maybe_force_on_boarding' ], 10, 1 );
 		add_filter( 'wcpay_api_request_headers', [ __CLASS__, 'add_wcpay_request_headers' ], 10, 1 );
 		add_filter( 'upgrader_pre_download', [ __CLASS__, 'maybe_override_wcpay_version' ], 10, 4 );
-                add_filter( 'wcpay_api_request_response', [ __CLASS__, 'maybe_retry_server_wp_cron_redirects'], 10, 4);
+		add_filter( 'wcpay_api_request_response', [ __CLASS__, 'maybe_retry_server_wp_cron_redirects'], 10, 4);
 		add_action( 'init', [ __CLASS__, 'maybe_force_disconnected' ] );
 		add_action( 'init', [ __CLASS__, 'maybe_override_platform_checkout_eligible' ] );
 		add_action( 'admin_enqueue_scripts', [ __CLASS__, 'enqueue_scripts' ] );
@@ -366,7 +367,8 @@ class WC_Payments_Dev_Tools {
 			self::enable_or_remove_option_from_checkbox( self::WOOPAY_OVERRIDE_PLATFORM_CHECKOUT_ELIGIBLE );
 			self::enable_or_remove_option_from_checkbox( self::WOOPAY_OVERRIDE_PLATFORM_CHECKOUT_ELIGIBLE_VALUE );
 			self::enable_or_remove_option_from_checkbox( self::WOOPAY_EXPRESS_CHECKOUT_FLAG_NAME );
-                        self::update_option_from_checkbox(self::RETRY_SERVER_WP_CRON_REDIRECTS);
+			self::enable_or_remove_option_from_checkbox( self::PROGRESSIVE_ONBOARDING_FLAG_NAME );
+			self::update_option_from_checkbox(self::RETRY_SERVER_WP_CRON_REDIRECTS);
 
 			if ( isset( $_POST[ self::REDIRECT_TO_OPTION ] ) ) {
 				update_option( self::REDIRECT_TO_OPTION, $_POST[ self::REDIRECT_TO_OPTION ] );
@@ -557,6 +559,10 @@ class WC_Payments_Dev_Tools {
 					<div style="margin-left: 2em;"><?php self::render_checkbox( self::WOOPAY_OVERRIDE_PLATFORM_CHECKOUT_ELIGIBLE_VALUE, 'Set platform_checkout_eligible flag to true, false otherwise.' ); ?></div>
 					<?php self::render_checkbox( self::WOOPAY_EXPRESS_CHECKOUT_FLAG_NAME, 'Enable the WooPay Express Checkout button.' ); ?>
 				</div>
+				<div>
+					<h2>Progressive Onboarding</h2>
+					<?php self::render_checkbox( self::PROGRESSIVE_ONBOARDING_FLAG_NAME, 'Enable Progressive Onboarding' ); ?>
+				</div>
 				<p>
 					<input type="submit" value="Submit" />
 				</p>
@@ -667,6 +673,10 @@ class WC_Payments_Dev_Tools {
 
 		if ( get_option( self::WOOPAY_EXPRESS_CHECKOUT_FLAG_NAME, '0') ) {
 			$enabled_options[] = 'WooPay Express Checkout button';
+		}
+
+		if ( get_option( self::PROGRESSIVE_ONBOARDING_FLAG_NAME, '0') ) {
+			$enabled_options[] = 'Progressive Onboarding testing';
 		}
 
 		if ( empty( $enabled_options ) ) {
