@@ -53,6 +53,8 @@ class WC_Payments_Dev_Tools {
 	 * Entry point of the plugin
 	 */
 	public static function init() {
+		include_once __DIR__ . '/woocommerce-payments-dev-shortcuts.php';
+
 		add_action( 'http_api_curl', [ __CLASS__, 'maybe_proxy_wpcom_request' ], 10, 3 );
 
 		add_action( 'admin_menu', [ __CLASS__, 'add_admin_page' ] );
@@ -68,6 +70,8 @@ class WC_Payments_Dev_Tools {
 		add_action( 'init', [ __CLASS__, 'maybe_force_disconnected' ] );
 		add_action( 'init', [ __CLASS__, 'maybe_override_platform_checkout_eligible' ] );
 		add_action( 'admin_enqueue_scripts', [ __CLASS__, 'enqueue_scripts' ] );
+
+		( new WooCommerce_Payments_Dev_Shortcuts() )->add_hooks();
 
 		if ( class_exists( 'WC_Payments_Subscriptions' ) && get_option( self::BILLING_CLOCKS_OPTION, false ) ) {
 			require_once 'billing-clocks/class-wc-pay-dev-billing-renewal-tester.php';
@@ -409,6 +413,35 @@ class WC_Payments_Dev_Tools {
 	}
 
 	/**
+	 * Returns the settings URL of WCPay.
+	 *
+	 * @return string The URL.
+	 */
+	public static function get_wcpay_settings_url() {
+		if ( class_exists( 'WC_Payments_Admin_Settings' ) ) {
+			return WC_Payments_Admin_Settings::get_settings_url();
+		} else {
+			return WC_Payment_Gateway_WCPay::get_settings_url();
+		}
+	}
+
+	/**
+	 * Returns the URL, which is used for re-onboarding.
+	 *
+	 * @return string
+	 */
+	public static function get_reonboarding_url() {
+		return wp_nonce_url(
+			add_query_arg(
+				[
+					'wcpay-connect' => '1',
+				],
+				self::get_wcpay_settings_url() ),
+			'wcpay-connect'
+		);
+	}
+
+	/**
 	 * Updates the given option name from submitted POST values
 	 *
 	 * @param string $option_name
@@ -466,13 +499,8 @@ class WC_Payments_Dev_Tools {
 	 */
 	private static function admin_page_output() {
 
-		if ( class_exists( 'WC_Payments_Admin_Settings' ) ) {
-			$wcpayments_settings_url = WC_Payments_Admin_Settings::get_settings_url();
-		} else {
-			$wcpayments_settings_url = WC_Payment_Gateway_WCPay::get_settings_url();
-		}
-
-		$wcpay_release_tag = self::get_wcpay_release_tag();
+		$wcpayments_settings_url = self::get_wcpay_settings_url();
+		$wcpay_release_tag       = self::get_wcpay_release_tag();
 		?>
 		<h1>WCPay Dev Utils</h1>
 		<p>
@@ -592,7 +620,7 @@ class WC_Payments_Dev_Tools {
 				<h2><a href="<?php echo wp_nonce_url( add_query_arg( [ 'wcpaydev-fetch-live-rates' => '1' ], self::get_settings_url() ), 'wcpaydev-fetch-live-rates' ); ?>">Fetch live currency rates</a></h2>
 			</p>
 			<p>
-				<h2><a href="<?php echo wp_nonce_url( add_query_arg( [ 'wcpay-connect' => '1' ], $wcpayments_settings_url ), 'wcpay-connect' ) ?>">Reonboard</a></h2>
+				<h2><a href="<?php echo $this->get_reonboarding_url() ?>">Reonboard</a></h2>
 			</p>
 			<p>
 				<h2><a href="<?php echo self::get_log_url(); ?>">Latest logs</a></h2>
@@ -689,6 +717,13 @@ class WC_Payments_Dev_Tools {
 	}
 
 	/**
+	 * Clears the wcpay account cache
+	 */
+	public static function clear_account_cache() {
+		self::get_database_cache() && self::get_database_cache()->delete( Database_Cache::ACCOUNT_KEY );
+	}
+
+	/**
 	 * Gets the redirect target url
 	 *
 	 * @return string
@@ -722,13 +757,6 @@ class WC_Payments_Dev_Tools {
 	 */
 	private static function get_settings_url() {
 		return admin_url( 'admin.php?page=' . self::ID );
-	}
-
-	/**
-	 * Clears the wcpay account cache
-	 */
-	private static function clear_account_cache() {
-		self::get_database_cache() && self::get_database_cache()->delete( Database_Cache::ACCOUNT_KEY );
 	}
 
 	/**

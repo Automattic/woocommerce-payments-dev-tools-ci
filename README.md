@@ -12,3 +12,20 @@ A suite of tools helpful when developing WooCommerce Payments.
 - For general use (e.g. creating a test account), only the `Dev mode enabled` checkbox and `Display notice about dev settings` should be checked. Make sure everything else is unchecked. If you have to make changes, be sure to click `Submit` to apply them.
 
 For additional information and instructions see PCYsg-DQ4-p2
+
+## Shortcuts
+
+This plugin will add a small admin-bar section with shortcuts for various development-related functions.
+
+Shortcuts are only available on the following domains:
+
+- `localhost`
+- `*.jurassic.tube`
+- `*.atomicsites.blog`
+- `*.ngrok.io`
+
+To use on a different domain, either open a PR in this repository, or use the following constant in `wp-config.php`:
+
+```php
+define( 'WCPAY_DEV_TOOLS_ENABLE_SHORTCUTS', true );
+```
