@@ -620,7 +620,7 @@ class WC_Payments_Dev_Tools {
 				<h2><a href="<?php echo wp_nonce_url( add_query_arg( [ 'wcpaydev-fetch-live-rates' => '1' ], self::get_settings_url() ), 'wcpaydev-fetch-live-rates' ); ?>">Fetch live currency rates</a></h2>
 			</p>
 			<p>
-				<h2><a href="<?php echo $this->get_reonboarding_url() ?>">Reonboard</a></h2>
+				<h2><a href="<?php echo self::get_reonboarding_url() ?>">Reonboard</a></h2>
 			</p>
 			<p>
 				<h2><a href="<?php echo self::get_log_url(); ?>">Latest logs</a></h2>
