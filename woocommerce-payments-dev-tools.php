@@ -347,6 +347,14 @@ class WC_Payments_Dev_Tools {
 			wp_safe_redirect( self::get_settings_url() );
 		}
 
+		if ( isset( $_GET['wcpaydev-clear-options'] ) ) {
+			check_admin_referer( 'wcpaydev-clear-options' );
+
+			delete_option( 'woocommerce_woocommerce_payments_settings' );
+
+			wp_safe_redirect( self::get_settings_url() );
+		}
+
 		if ( isset( $_GET['wcpaydev-fetch-live-rates'] ) ) {
 			check_admin_referer( 'wcpaydev-fetch-live-rates' );
 
@@ -616,6 +624,9 @@ class WC_Payments_Dev_Tools {
 			<p>
 					<h2>Gateway settings <a href="<?php echo $wcpayments_settings_url; ?>">(edit)</a>:</h2>
 					<textarea rows="15" cols="100"><?php echo esc_html( var_export( get_option( 'woocommerce_woocommerce_payments_settings' ), true ) ) ?></textarea>
+			</p>
+			<p>
+				<h2><a href="<?php echo wp_nonce_url( add_query_arg( [ 'wcpaydev-clear-options' => '1' ], self::get_settings_url() ), 'wcpaydev-clear-options' ); ?>">Reset all WCPay settings</a></h2>
 			</p>
 			<p>
 				<h2><a href="<?php echo wp_nonce_url( add_query_arg( [ 'wcpaydev-clear-notes' => '1' ], self::get_settings_url() ), 'wcpaydev-clear-notes' ); ?>">Delete all WCPay inbox notes</a></h2>
