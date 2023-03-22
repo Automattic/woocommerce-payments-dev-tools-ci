@@ -2,7 +2,7 @@
 
 /**
  * Plugin Name: WooCommerce Payments Dev Tools
- * Description: Dev tools for WooCommerce Payments
+ * Description: Dev tools for WooCommerce Payments. Only effective when WooCommerce Payments is active.
  * Author: Automattic
  * Author URI: https://woocommerce.com/
  */
@@ -973,6 +973,11 @@ class WC_Payments_Dev_Tools {
 }
 
 function wcpay_dev_tools_init() {
+	// Do not load if WooCommerce Payments is not active.
+	if ( ! defined( 'WCPAY_PLUGIN_FILE' ) ) {
+		return;
+	}
+
 	WC_Payments_Dev_Tools::init();
 
 	// load the CLI source if required
