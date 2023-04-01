@@ -19,6 +19,7 @@ class WC_Payments_Dev_Tools {
 	const ACCOUNT_TASK_LIST = '_wcpay_feature_account_overview_task_list';
 	const UPE = '_wcpay_feature_upe';
 	const UPE_SPLIT = '_wcpay_feature_upe_split';
+	const UPE_DEFERRED = '_wcpay_feature_upe_deferred_intent';
 	const UPE_ADDITIONAL_PAYMENT_METHODS = '_wcpay_feature_upe_additional_payment_methods';
 	const REDIRECT_TO_OPTION = 'wcpaydev_redirect_to';
 	const PROXY_OPTION = 'wcpaydev_proxy';
@@ -372,6 +373,7 @@ class WC_Payments_Dev_Tools {
 			self::enable_or_remove_option_from_checkbox( self::ACCOUNT_TASK_LIST );
 			self::enable_or_remove_option_from_checkbox( self::UPE );
 			self::enable_or_remove_option_from_checkbox( self::UPE_SPLIT );
+			self::enable_or_remove_option_from_checkbox( self::UPE_DEFERRED );
 			self::enable_or_remove_option_from_checkbox( self::UPE_ADDITIONAL_PAYMENT_METHODS );
 			self::enable_or_remove_option_from_checkbox( self::SUBSCRIPTIONS );
 			self::update_option_from_checkbox( self::CAPITAL );
@@ -527,6 +529,7 @@ class WC_Payments_Dev_Tools {
 				$has_upe_split_been_manually_disabled_text = 'disabled' === get_option( self::UPE_SPLIT ) ? ' (was disabled through WCPay, un-check to reset or save to re-enable)' : '';
 				self::render_checkbox( self::UPE, "Enable UPE checkout (legacy)", false, $has_upe_been_manually_disabled_text );
 				self::render_checkbox( self::UPE_SPLIT, "Enable Split UPE checkout", false, $has_upe_split_been_manually_disabled_text );
+				self::render_checkbox( self::UPE_DEFERRED, "Enable Split UPE checkout with deferred intent creation", false );
 				self::render_checkbox( self::UPE_ADDITIONAL_PAYMENT_METHODS, 'Add UPE additional payment methods' );
 				self::render_checkbox( self::SUBSCRIPTIONS, 'Enable WCPay subscriptions' );
 				self::render_checkbox( self::CAPITAL, 'Enable Stripe Capital' );
@@ -675,6 +678,10 @@ class WC_Payments_Dev_Tools {
 
 		if ( get_option( self::UPE_SPLIT, false ) ) {
 			$enabled_options[] = 'Split UPE checkout enabled';
+		}
+
+		if ( get_option( self::UPE_DEFERRED, false ) ) {
+			$enabled_options[] = 'Split UPE checkout with deferred intent creation enabled';
 		}
 
 		if ( get_option( self::UPE_ADDITIONAL_PAYMENT_METHODS, false ) ) {
