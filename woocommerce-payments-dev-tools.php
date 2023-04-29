@@ -864,6 +864,20 @@ class WC_Payments_Dev_Tools {
 	}
 
 	/**
+	 * Authenticates requests from local WooPay to WP REST API endpoints.
+	 *
+  	 * @param bool $is_signed_with_blog_token
+	 * @return bool
+	 */
+	public static function mock_rest_authentication_is_signed_with_blog_token( $is_signed_with_blog_token ) {
+		if ( ! isset( $_GET['_for'] ) || $_GET['_for'] !== 'mock_jetpack_woopay' ) {
+			return $is_signed_with_blog_token;
+		}
+
+		return true;
+	}
+
+	/**
 	 * Returns a url to the latest WCPay log file
 	 *
 	 * @return string
@@ -998,3 +1012,4 @@ add_action( 'plugins_loaded', 'wcpay_dev_tools_init', 999 );
 // Register these filters here since user authentication happens before our init function gets a chance to run.
 add_filter( 'determine_current_user', [ WC_Payments_Dev_Tools::class, 'mock_rest_authenticate' ], 999 );
 add_filter( 'rest_authentication_errors', [ WC_Payments_Dev_Tools::class, 'mock_rest_authentication_errors' ], 999 );
+add_filter( 'wcpay_woopay_is_signed_with_blog_token', [ WC_Payments_Dev_Tools::class, 'mock_rest_authentication_is_signed_with_blog_token'], 10, 1 );
