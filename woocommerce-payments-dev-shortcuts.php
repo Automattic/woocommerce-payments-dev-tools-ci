@@ -172,27 +172,17 @@ class WooCommerce_Payments_Dev_Shortcuts {
 			);
 		}
 
-		if ( get_option( WC_Payments_Dev_Tools::FORCE_ONBOARDING_OPTION, false ) ) {
-			$admin_bar->add_menu(
-				[
-					'id'     => 'wcpay-reonboard',
-					'parent' => $root_id,
-					'title'  => $this->emoji( '♻' ) . 'Re-onboard',
-					'href'   => $this->get_action_url( 'reonboard' ),
-					'meta'   => [
-						'onclick' => 'return confirm("Are you sure?");'
-					],
-				]
-			);
-		} else {
-			$admin_bar->add_menu(
-				[
-					'id'     => 'wcpay-reonboard',
-					'parent' => $root_id,
-					'title'  => '<span style="opacity: 0.6">' . $this->emoji( '♻' ) . 'Toggle &quot;Force onboarding&quot; to re-onboard</span>',
-				]
-			);
-		}
+		$admin_bar->add_menu(
+			[
+				'id'     => 'wcpay-reonboard',
+				'parent' => $root_id,
+				'title'  => $this->emoji( '♻' ) . 'Re-onboard',
+				'href'   => $this->get_action_url( 'reonboard' ),
+				'meta'   => [
+					'onclick' => 'return confirm("Are you sure?");'
+				],
+			]
+		);
 	}
 
 	/**
@@ -329,7 +319,7 @@ class WooCommerce_Payments_Dev_Shortcuts {
 	 * @param string $return_url The URL of the current page, to be redirected back to.
 	 */
 	public function use_sandbox( $return_url ) {
-		update_option( WC_Payments_Dev_Tools::REDIRECT_OPTION, false );
+		update_option( WC_Payments_Dev_Tools::REDIRECT_OPTION, '0' );
 		WC_Payments_Dev_Tools::clear_account_cache();
 		wp_safe_redirect( $return_url );
 		exit;
@@ -341,7 +331,7 @@ class WooCommerce_Payments_Dev_Shortcuts {
 	 * @param string $return_url The URL of the current page, to be redirected back to.
 	 */
 	public function use_local_server( $return_url ) {
-		update_option( WC_Payments_Dev_Tools::REDIRECT_OPTION, true );
+		update_option( WC_Payments_Dev_Tools::REDIRECT_OPTION, '1' );
 		WC_Payments_Dev_Tools::clear_account_cache();
 		wp_safe_redirect( $return_url );
 		exit;
@@ -351,19 +341,7 @@ class WooCommerce_Payments_Dev_Shortcuts {
 	 * Attempts re-onboarding.
 	 */
 	public function reonboard() {
-		if ( ! get_option( WC_Payments_Dev_Tools::FORCE_ONBOARDING_OPTION, false ) ) {
-			$dev_settings_url = admin_url( 'admin.php?page=wcpaydev' );
-
-			printf(
-				'Please go to <a href="%s">%s</a> and enable &quot;Force onboarding&quot; to use this shortcut.',
-				$dev_settings_url,
-				$dev_settings_url
-			);
-
-			exit;
-		}
-
-		wp_safe_redirect( WC_Payments_Dev_Tools::get_reonboarding_url() );
+		wp_safe_redirect( WC_Payments_Dev_Tools::get_onboarding_url( true ) );
 		exit;
 	}
 

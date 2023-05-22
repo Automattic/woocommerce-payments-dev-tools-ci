@@ -1,0 +1,126 @@
+.toplevel_page_wcpaydev .contextual-help-sidebar {
+	width: 200px;
+}
+
+.toplevel_page_wcpaydev #contextual-help-back {
+	right: 220px;
+}
+
+.code-container {
+	overflow: auto;
+	max-height: 35em;
+	margin-bottom: 2em;
+}
+
+.code-container pre {
+	margin: 0;
+}
+
+.form-table td p.group-description {
+	margin-bottom: 12px;
+}
+
+.form-table td p.description.checkbox-description {
+	margin-bottom: 12px;
+	margin-top: 0;
+	margin-left: 24px;
+}
+
+.form-table td .indentation-1{
+	margin-left: 24px !important;
+}
+
+.form-table td label .inline-emoji-button {
+	font-size: large;
+}
+
+#wcpay-dev-tools-settings.columns-2 {
+	display: flex;
+	flex-wrap: wrap;
+}
+
+#wcpay-dev-tools-settings.columns-2 .main-column .form-table th {
+	width: 20%;
+}
+
+#wcpay-dev-tools-settings.columns-2 .main-column {
+	flex-basis: 0;
+	flex-grow: 2;
+	min-width: 66%;
+}
+
+#wcpay-dev-tools-settings.columns-2 .secondary-column {
+	flex-grow: 1;
+	flex-basis: 12rem;
+	align-self: start;
+	position: sticky;
+	top: 52px; /* 32px the admin bar + 20px the spacing between the sidebar boxes*/
+	margin-top: 24px;
+	max-width: 470px;
+}
+
+#wcpay-dev-tools-settings.columns-2 .secondary-column .box-container {
+	position: relative;
+	display: grid;
+	grid-template-rows: auto 1fr auto;
+	width: 100%;
+}
+
+#wcpay-dev-tools-settings.columns-2 .secondary-column .box-container .stuffbox .inside {
+	padding: 6px 10px 8px;
+}
+
+#wcpay-dev-tools-settings.columns-2 .secondary-column .box-container .stuffbox > h2 {
+	border-bottom: 1px solid #f0f0f1;
+	padding: 8px 10px;
+	font-size: 14px;
+	margin: 0;
+	line-height: 1.4;
+}
+
+#wcpay-dev-tools-settings.columns-2 .secondary-column .box-container .stuffbox h3 {
+	color: #3c434a;
+	font-size: 1.2em;
+	margin: 0.5em 0 0.6em;
+}
+
+#wcpay-dev-tools-settings.columns-2 .secondary-column .box-container .stuffbox h3.has-description {
+	margin-bottom: 0;
+}
+
+#wcpay-dev-tools-settings a.external-link {
+	display: inline-block;
+}
+
+#wcpay-dev-tools-settings a.external-link::after {
+	font: 16px/11px dashicons;
+	content: '\f504';
+	top: 3px;
+	position: relative;
+	padding-right: 0;
+	display: inline-block;
+	text-decoration: none;
+}
+
+/* Laptops and lower behavior */
+@media screen and ( max-width: 1360px ) {
+	#wcpay-dev-tools-settings.columns-2 .main-column {
+		width: 65%;
+	}
+	#wcpay-dev-tools-settings.columns-2 .secondary-column {
+		width: 34%;
+	}
+
+	#wcpay-dev-tools-settings.columns-2 .main-column .form-table td {
+		display: block;
+		margin-bottom: 0;
+		padding: 15px 10px 0;
+	}
+
+	#wcpay-dev-tools-settings.columns-2 .main-column .form-table th {
+		display: block;
+		padding: 20px 0 0 0;
+		width: 100%;
+	}
+
+}

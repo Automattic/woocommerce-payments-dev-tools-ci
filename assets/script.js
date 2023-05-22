@@ -38,4 +38,14 @@ document.addEventListener( 'DOMContentLoaded', function() {
 	document.querySelectorAll( '#copyButton' ).forEach( ( el ) => {
 		el.addEventListener( 'click', copyToClipboard );
 	} );
+
+	// Handle show/hide the WCPay Subscriptions Renewal Testing group depending on WCPay Subscriptions feature flag being enabled or not.
+	document.querySelector( '#_wcpay_feature_subscriptions' ).addEventListener( 'change', ( evt ) => {
+		document.querySelector( '.wcpay-subscriptions-settings' ).classList.toggle('hide-if-js', ! evt.target.checked );
+	} );
+
+	// Handle show/hide the WCPay Renewal Testing Clock settings depending on WCPay Subscriptions Renewal Testing being enabled or not.
+	document.querySelector( '#wcpaydev_wcpay_billing_clock' ).addEventListener( 'change', ( evt ) => {
+		document.querySelector( '.wcpay-subscriptions-renewal-testing-settings' ).classList.toggle('hide-if-js', ! evt.target.checked );
+	} );
 } );
