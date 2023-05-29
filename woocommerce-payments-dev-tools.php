@@ -738,13 +738,27 @@ class WC_Payments_Dev_Tools {
 			<p>The account data was last fetched from the WCPay Server: <strong><?php echo human_time_diff( intval( $account_cache['fetched'] ) ) ?> ago.</strong></p>
 		<?php }
 
-		if ( is_null( $account_cache['data'] ) && $account_cache['errored'] ) { ?>
+		if ( is_array( $account_cache )
+			&& ! empty( $account_cache['errored'] ) ) { ?>
 			<p>❗️ There was a problem getting the account data. If you target <strong>your local WCPay server,</strong> make sure it is running and you are redirecting WCPay API requests to it 🤔</p>
-		<?php } elseif ( get_option( self::FORCE_DISCONNECTED_OPTION, false ) ) { ?>
+		<?php } elseif ( is_array( $account_cache )
+						&& empty( $account_cache['data'] )
+						&& get_option( self::FORCE_DISCONNECTED_OPTION, false ) ) { ?>
 			<p>ℹ️ The cache contents are empty because you have the "Force the WCPay plugin to act as disconnected from the WCPay Server" option enabled.</p>
 		<?php } ?>
 		<div class="code-container">
-			<pre><code class="language-php"><?php self::custom_var_export( $account_cache['data'] ); ?></code></pre>
+			<pre><code class="language-php"><?php
+					if ( false === $account_cache ) {
+						echo 'The account cache hasn\'t been saved into the database, yet.';
+					} else if ( ! array_key_exists( 'data', $account_cache ) ) {
+						if ( empty( $account_cache['errored'] ) ) {
+							echo 'There is no data entry in the account cache and no error has been reported!';
+						} else {
+							echo 'There is no data entry in the account cache!';
+						}
+					} else {
+						self::custom_var_export( $account_cache['data'] );
+					} ?></code></pre>
 		</div>
 
 		<h2>WCPay Payment Gateway settings <a href="<?php echo self::get_wcpay_settings_url(); ?>">(edit)</a></h2>
