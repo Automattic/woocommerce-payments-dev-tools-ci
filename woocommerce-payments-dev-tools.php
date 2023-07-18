@@ -20,7 +20,6 @@ class WC_Payments_Dev_Tools {
 	const PROXY_OPTION = 'wcpaydev_proxy';
 	const PROXY_VIA_OPTION = 'wcpaydev_proxy_via';
 	const WCPAY_RELEASE_TAG = 'wcpaydev_wcpay_release_tag';
-	const ACCOUNT_TASK_LIST = '_wcpay_feature_account_overview_task_list';
 	const UPE = '_wcpay_feature_upe';
 	const UPE_SPLIT = '_wcpay_feature_upe_split';
 	const UPE_DEFERRED = '_wcpay_feature_upe_deferred_intent';
@@ -613,7 +612,6 @@ class WC_Payments_Dev_Tools {
 		}
 		self::save_option_from_checkbox( self::REDIRECT_LOCALHOST_OPTION );
 
-		self::save_option_from_checkbox( self::ACCOUNT_TASK_LIST, true );
 		self::save_option_from_checkbox( self::UPE, true );
 		self::save_option_from_checkbox( self::UPE_SPLIT, true );
 		self::save_option_from_checkbox( self::UPE_DEFERRED, true );
@@ -907,8 +905,6 @@ class WC_Payments_Dev_Tools {
 				<fieldset>
 					<legend class="screen-reader-text"><span><?php esc_html_e( 'WCPay Feature flags settings', 'wcpaydev' ); ?></span></legend>
 
-					<?php self::render_checkbox( self::ACCOUNT_TASK_LIST, 'Enable account overview task list section' ); ?>
-
 					<?php
 					$has_upe_been_manually_disabled_text = 'disabled' === get_option( self::UPE ) ? ' (was disabled through WCPay, un-check to reset or save to re-enable)' : '';
 					self::render_checkbox( self::UPE, 'Enable UPE checkout (legacy)', $has_upe_been_manually_disabled_text ); ?>
@@ -1155,10 +1151,6 @@ class WC_Payments_Dev_Tools {
 
 		if ( get_option( self::PROXY_OPTION, false ) ) {
 			$enabled_options[] = 'Proxying WPCOM requests through <code>' . self::get_proxy_via() . '</code>';
-		}
-
-		if ( get_option( self::ACCOUNT_TASK_LIST, false ) ) {
-			$enabled_options[] = 'Account overview task list';
 		}
 
 		if ( get_option( self::UPE, false ) ) {
