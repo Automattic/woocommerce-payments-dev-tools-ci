@@ -7,6 +7,7 @@
  */
 
 use WCPay\Database_Cache;
+use WCPay\Internal\Payment\Factor;
 
 class WC_Payments_Dev_Tools {
 	const ID = 'wcpaydev';
@@ -33,6 +34,8 @@ class WC_Payments_Dev_Tools {
 	const WOOPAY_OVERRIDE_PLATFORM_CHECKOUT_ELIGIBLE_VALUE = 'override_woopay_eligible_value';
 	const WOOPAY_EXPRESS_CHECKOUT_FLAG_NAME = '_wcpay_feature_woopay_express_checkout';
 	const PROGRESSIVE_ONBOARDING_FLAG_NAME = '_wcpay_feature_progressive_onboarding';
+	const OVERWRITE_PAYMENT_PROCESS_FACTORS_FLAG_NAME = '_wcpay_overwrite_payment_process_factors';
+	const PAYMENT_PROCESS_FACTOR_PREFIX = '_wcpay_payment_factor_';
 
 	/**
 	 * Helpers for GitHub access
@@ -70,6 +73,7 @@ class WC_Payments_Dev_Tools {
 		add_filter( 'wcpay_api_request_response', [ __CLASS__, 'maybe_retry_server_wp_cron_redirects' ], 10, 4 );
 		add_action( 'init', [ __CLASS__, 'maybe_force_disconnected' ] );
 		add_action( 'init', [ __CLASS__, 'maybe_override_woopay_eligible' ] );
+		add_filter( 'wcpay_new_payment_process_enabled_factors', [ __CLASS__, 'maybe_overwrite_payment_process_factors' ], 10, 4 );
 
 		( new WooCommerce_Payments_Dev_Shortcuts() )->add_hooks();
 
@@ -524,6 +528,29 @@ class WC_Payments_Dev_Tools {
 		);
 	}
 
+	/**
+	 * Overwrites payment process factors when chosen.
+	 *
+	 * @param array $factors The factors in the account cache, provided by the server.
+	 * @return array         Either the same factors, or the ones enabled in dev tools.
+	 */
+	public static function maybe_overwrite_payment_process_factors( $factors ) {
+		if (
+			! get_option( self::OVERWRITE_PAYMENT_PROCESS_FACTORS_FLAG_NAME, false )
+			|| ! class_exists( Factor::class )
+		) {
+			return $factors;
+		}
+
+		$factors = [];
+		foreach ( Factor::get_all_factors() as $factor ) {
+			if ( get_option( self::PAYMENT_PROCESS_FACTOR_PREFIX . $factor, false ) ) {
+				$factors[] = $factor;
+			}
+		}
+
+		return $factors;
+	}
 
 	/**
 	 * Handles settings page actions.
@@ -626,6 +653,12 @@ class WC_Payments_Dev_Tools {
 		self::save_option_from_checkbox( self::PROGRESSIVE_ONBOARDING_FLAG_NAME, true );
 		self::save_option_from_checkbox( self::RETRY_SERVER_WP_CRON_REDIRECTS );
 
+		if ( class_exists( Factor::class ) ) {
+			self::save_option_from_checkbox( self::OVERWRITE_PAYMENT_PROCESS_FACTORS_FLAG_NAME );
+			foreach ( Factor::get_all_factors() as $factor ) {
+				self::save_option_from_checkbox( self::PAYMENT_PROCESS_FACTOR_PREFIX . $factor );
+			}
+		}
 
 		self::save_option_from_checkbox( self::DISPLAY_NOTICE );
 		self::save_option( self::WCPAY_RELEASE_TAG, '' );
@@ -957,6 +990,30 @@ class WC_Payments_Dev_Tools {
 					<?php self::render_checkbox( self::CAPITAL, 'Enable Stripe Capital' ); ?>
 					<?php self::render_checkbox( self::DOCUMENTS, 'Enable WCPay Documents section' ); ?>
 					<?php self::render_checkbox( self::PROGRESSIVE_ONBOARDING_FLAG_NAME, 'Enable Progressive Onboarding' ); ?>
+
+					<h4>New Payment Process Factors</h4>
+
+					<?php self::render_checkbox( self::OVERWRITE_PAYMENT_PROCESS_FACTORS_FLAG_NAME, 'Overwrite payment process factors' ); ?>
+
+					<p style="border: 1px solid rgba(0,0,0,0.3); padding: 1em;">
+						<?php
+						if ( class_exists( Factor::class ) ) {
+							foreach ( Factor::get_all_factors() as $factor ) {
+								self::render_checkbox(
+									self::PAYMENT_PROCESS_FACTOR_PREFIX . $factor,
+									'<code>' . $factor . '</code>',
+									'',
+									false,
+									false
+								);
+							}
+						} else {
+							echo 'You are running a version of WooPayments, which does not support the new payment process.';
+						}
+						?>
+					</p>
+
+					<p>Checking supported factors will enable using the new payment process whenever they are present. Learn more <a class="external-link" class="external-link" href="https://wp.me/paJDYF-9hL">here</a></p>
 				</fieldset>
 			</td>
 		</tr>
@@ -1096,16 +1153,19 @@ class WC_Payments_Dev_Tools {
 	 * @param string $label       The label for this checkbox.
 	 * @param string $description Optional. The description for this checkbox.
 	 * @param bool   $default     Optional. The default value of this checkbox.
+	 * @param bool   $break       Optional. Whether to add a line break.
 	 */
-	private static function render_checkbox( string $option_name, string $label, string $description = '', bool $default = false ) {
+	private static function render_checkbox( string $option_name, string $label, string $description = '', bool $default = false, bool $break = true ) {
 		global $allowedtags;
 		?>
-		<label for="<?php echo esc_attr( $option_name ); ?>">
+		<label for="<?php echo esc_attr( $option_name ); ?>" style="display: inline-block; padding-right: .5em">
 			<input name="<?php echo esc_attr( $option_name ); ?>" type="checkbox"
 			       id="<?php echo esc_attr( $option_name ); ?>"
 			       value="1" <?php checked( '1', get_option( $option_name, $default ) ); ?> />
 			<?php echo wp_kses_data( $label ); ?></label>
+		<?php if ( $break ): ?>
 		<br/>
+		<?php endif; ?>
 		<?php
 		if ( ! empty( $description ) ) {
 			echo '<p class="description checkbox-description">' . wp_kses( $description,
