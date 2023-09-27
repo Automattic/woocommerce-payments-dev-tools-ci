@@ -36,6 +36,7 @@ class WC_Payments_Dev_Tools {
 	const PROGRESSIVE_ONBOARDING_FLAG_NAME = '_wcpay_feature_progressive_onboarding';
 	const OVERWRITE_PAYMENT_PROCESS_FACTORS_FLAG_NAME = '_wcpay_overwrite_payment_process_factors';
 	const PAYMENT_PROCESS_FACTOR_PREFIX = '_wcpay_payment_factor_';
+	const PAY_FOR_ORDER_FLOW = '_wcpay_feature_pay_for_order_flow';
 
 	/**
 	 * Helpers for GitHub access
@@ -651,6 +652,7 @@ class WC_Payments_Dev_Tools {
 		self::save_option( self::WOOPAY_OVERRIDE_PLATFORM_CHECKOUT_ELIGIBLE_VALUE );
 		self::save_option_from_checkbox( self::WOOPAY_EXPRESS_CHECKOUT_FLAG_NAME, true );
 		self::save_option_from_checkbox( self::PROGRESSIVE_ONBOARDING_FLAG_NAME, true );
+		self::save_option_from_checkbox( self::PAY_FOR_ORDER_FLOW, true );
 		self::save_option_from_checkbox( self::RETRY_SERVER_WP_CRON_REDIRECTS );
 
 		if ( class_exists( Factor::class ) ) {
@@ -990,6 +992,7 @@ class WC_Payments_Dev_Tools {
 					<?php self::render_checkbox( self::CAPITAL, 'Enable Stripe Capital' ); ?>
 					<?php self::render_checkbox( self::DOCUMENTS, 'Enable WCPay Documents section' ); ?>
 					<?php self::render_checkbox( self::PROGRESSIVE_ONBOARDING_FLAG_NAME, 'Enable Progressive Onboarding' ); ?>
+					<?php self::render_checkbox( self::PAY_FOR_ORDER_FLOW, "Enable the Pay-for-order flow for WooPay", false ); ?>
 
 					<h4>New Payment Process Factors</h4>
 
