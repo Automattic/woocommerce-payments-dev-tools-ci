@@ -20,6 +20,8 @@ class WC_Payments_Dev_Tools {
 	const REDIRECT_TO_OPTION = 'wcpaydev_redirect_to';
 	const PROXY_OPTION = 'wcpaydev_proxy';
 	const PROXY_VIA_OPTION = 'wcpaydev_proxy_via';
+	const JETPACK_AUTHENTICATION_MOCKING = 'wcpaydev_jetpack_authentication_mocking';
+
 	const WCPAY_RELEASE_TAG = 'wcpaydev_wcpay_release_tag';
 	const UPE = '_wcpay_feature_upe';
 	const UPE_SPLIT = '_wcpay_feature_upe_split';
@@ -84,6 +86,14 @@ class WC_Payments_Dev_Tools {
 		}
 	}
 
+	/**
+	 * Gets JETPACK_AUTHENTICATION_MOCKING setting. Fall back to the dev mode setting in case it's not been set.
+	 *
+	 * @return bool
+	 */
+	public static function is_jetpack_authentication_mocking_enabled(): bool {
+		return boolval( get_option( self::JETPACK_AUTHENTICATION_MOCKING, self::should_activate_dev_mode() ) );
+	}
 	/**
 	 * Hooks into admin_menu and adds an admin page for this plugin.
 	 */
@@ -639,6 +649,7 @@ class WC_Payments_Dev_Tools {
 			self::save_option( self::PROXY_VIA_OPTION, '' );
 		}
 		self::save_option_from_checkbox( self::REDIRECT_LOCALHOST_OPTION );
+		self::save_option_from_checkbox( self::JETPACK_AUTHENTICATION_MOCKING );
 
 		self::save_option_from_checkbox( self::UPE, true );
 		self::save_option_from_checkbox( self::UPE_SPLIT, true );
@@ -922,7 +933,14 @@ class WC_Payments_Dev_Tools {
 						(Docker container). Empty and save to <em>revert</em> to the default proxy.<br>Note: <strong>In
 							general, you don't need to proxy.</strong> If you <em>"Redirect WCPay API requests"</em>
 						then you probably want to proxy them also.</p>
-
+					<?php
+					self::render_checkbox(
+						self::JETPACK_AUTHENTICATION_MOCKING,
+						'Enable Jetpack authentication mocking',
+						'Allow incoming REST requests from servers to pass Jetpack authentication. This is <strong>required</strong> for testing with a local server, but unnecessary for sandboxed or production WPCOM servers. Most of the time you just need this feature on for your localhost environment. <br><strong>Note: Extremely careful when enabling this option for sites in production or with public access, even with Jurassic Ninja, as it opens access to WooPayments REST API without authentication.</strong>',
+						self::is_jetpack_authentication_mocking_enabled()
+					);
+					?>
 				</fieldset>
 			</td>
 		</tr>
@@ -1414,6 +1432,10 @@ class WC_Payments_Dev_Tools {
 			return null;
 		}
 
+		if ( false === self::is_jetpack_authentication_mocking_enabled() ) {
+			exit( 'Option "Jetpack authentication mocking" is disabled in WooPayments Dev Tools' );
+		}
+
 		// Making an assumption here that user 1 owns the Jetpack connection.
 		$verified = array(
 			'type'    => 'user',
@@ -1458,6 +1480,10 @@ class WC_Payments_Dev_Tools {
 	public static function mock_rest_authentication_is_signed_with_blog_token( $is_signed_with_blog_token ) {
 		if ( ! isset( $_GET['_for'] ) || $_GET['_for'] !== 'mock_jetpack_woopay' ) {
 			return $is_signed_with_blog_token;
+		}
+
+		if ( false === self::is_jetpack_authentication_mocking_enabled() ) {
+			exit( 'Option "Jetpack authentication mocking" is disabled in WooPayments Dev Tools.' );
 		}
 
 		return true;
