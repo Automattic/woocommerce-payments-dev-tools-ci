@@ -23,10 +23,6 @@ class WC_Payments_Dev_Tools {
 	const JETPACK_AUTHENTICATION_MOCKING = 'wcpaydev_jetpack_authentication_mocking';
 
 	const WCPAY_RELEASE_TAG = 'wcpaydev_wcpay_release_tag';
-	const UPE = '_wcpay_feature_upe';
-	const UPE_SPLIT = '_wcpay_feature_upe_split';
-	const UPE_DEFERRED = '_wcpay_feature_upe_deferred_intent';
-	const UPE_ADDITIONAL_PAYMENT_METHODS = '_wcpay_feature_upe_additional_payment_methods';
 	const BILLING_CLOCKS_OPTION = 'wcpaydev_wcpay_billing_clock';
 	const BILLING_CLOCK_SECRET_KEY_OPTION = 'wcpay_billing_clock_secret';
 	const SUBSCRIPTIONS = '_wcpay_feature_subscriptions';
@@ -67,7 +63,6 @@ class WC_Payments_Dev_Tools {
 
 		add_action( 'admin_notices', [ __CLASS__, 'maybe_display_settings_notice' ] );
 		add_filter( 'wcpay_dev_mode', [ __CLASS__, 'should_activate_dev_mode' ], 10, 1 );
-		add_filter( 'wcpay_upe_available_payment_methods', [ __CLASS__, 'maybe_add_upe_payment_methods' ], 10, 1 );
 		add_filter( 'pre_http_request', [ __CLASS__, 'maybe_redirect_api_request' ], 10, 3 );
 		add_action( 'http_api_curl', [ __CLASS__, 'maybe_proxy_wpcom_request' ], 10, 3 );
 		add_filter( 'wc_payments_get_onboarding_data_args', [ __CLASS__, 'maybe_force_re_onboarding' ], 10, 1 );
@@ -221,25 +216,6 @@ class WC_Payments_Dev_Tools {
 		self::maybe_handle_actions();
 		self::maybe_handle_settings_save();
 		self::admin_page_output();
-	}
-
-	/**
-	 * Adds UPE payment methods for development mode.
-	 *
-	 * @param array $methods The payment methods list.
-	 *
-	 * @return array The modified payment methods list.
-	 */
-	public static function maybe_add_upe_payment_methods( $methods ) {
-		if ( ! get_option( self::UPE_ADDITIONAL_PAYMENT_METHODS, false ) ) {
-			return $methods;
-		}
-
-		$methods[] = 'giropay';
-		$methods[] = 'sepa_debit';
-		$methods[] = 'sofort';
-
-		return array_unique( $methods );
 	}
 
 	/**
@@ -651,10 +627,6 @@ class WC_Payments_Dev_Tools {
 		self::save_option_from_checkbox( self::REDIRECT_LOCALHOST_OPTION );
 		self::save_option_from_checkbox( self::JETPACK_AUTHENTICATION_MOCKING );
 
-		self::save_option_from_checkbox( self::UPE, true );
-		self::save_option_from_checkbox( self::UPE_SPLIT, true );
-		self::save_option_from_checkbox( self::UPE_DEFERRED, true );
-		self::save_option_from_checkbox( self::UPE_ADDITIONAL_PAYMENT_METHODS, true );
 		self::save_option_from_checkbox( self::SUBSCRIPTIONS, true );
 		self::save_option_from_checkbox( self::CAPITAL );
 		self::save_option_from_checkbox( self::DOCUMENTS );
@@ -958,18 +930,6 @@ class WC_Payments_Dev_Tools {
 				<fieldset>
 					<legend class="screen-reader-text"><span><?php esc_html_e( 'WCPay Feature flags settings', 'wcpaydev' ); ?></span></legend>
 
-					<?php
-					$has_upe_been_manually_disabled_text = 'disabled' === get_option( self::UPE ) ? ' (was disabled through WCPay, un-check to reset or save to re-enable)' : '';
-					self::render_checkbox( self::UPE, 'Enable UPE checkout (legacy)', $has_upe_been_manually_disabled_text ); ?>
-
-					<?php
-					$has_upe_split_been_manually_disabled_text = 'disabled' === get_option( self::UPE_SPLIT ) ? ' (was disabled through WCPay, un-check to reset or save to re-enable)' : '';
-					self::render_checkbox( self::UPE_SPLIT, 'Enable Split UPE checkout', $has_upe_split_been_manually_disabled_text ); ?>
-
-					<?php self::render_checkbox( self::UPE_DEFERRED, 'Enable Split UPE checkout with deferred intent creation' ); ?>
-
-					<?php self::render_checkbox( self::UPE_ADDITIONAL_PAYMENT_METHODS, 'Add UPE additional payment methods' ); ?>
-
 					<?php self::render_checkbox( self::SUBSCRIPTIONS, 'Enable WCPay Subscriptions' ); ?>
 
 					<?php
@@ -1232,22 +1192,6 @@ class WC_Payments_Dev_Tools {
 
 		if ( get_option( self::PROXY_OPTION, false ) ) {
 			$enabled_options[] = 'Proxying WPCOM requests through <code>' . self::get_proxy_via() . '</code>';
-		}
-
-		if ( get_option( self::UPE, false ) ) {
-			$enabled_options[] = 'UPE checkout (legacy)';
-		}
-
-		if ( get_option( self::UPE_SPLIT, false ) ) {
-			$enabled_options[] = 'Split UPE checkout';
-		}
-
-		if ( get_option( self::UPE_DEFERRED, false ) ) {
-			$enabled_options[] = 'Split UPE checkout with deferred intent creation';
-		}
-
-		if ( get_option( self::UPE_ADDITIONAL_PAYMENT_METHODS, false ) ) {
-			$enabled_options[] = 'UPE additional payment methods enabled';
 		}
 
 		if ( get_option( self::SUBSCRIPTIONS, false ) ) {
