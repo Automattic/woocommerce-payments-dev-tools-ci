@@ -126,6 +126,26 @@ class WooCommerce_Payments_Dev_Shortcuts {
 			]
 		);
 
+		if ( WC_Payments_Features::is_upe_enabled() ) {
+			$admin_bar->add_menu(
+				[
+					'id'     => 'wcpay-disable-upe',
+					'parent' => $root_id,
+					'title'  => $this->emoji( '🛑' ) . 'Deactivate UPE',
+					'href'   => $this->get_action_url( 'disable_upe', true ),
+				]
+			);
+		} else {
+			$admin_bar->add_menu(
+				[
+					'id'     => 'wcpay-enable-upe',
+					'parent' => $root_id,
+					'title'  => $this->emoji( '✅' ) . 'Activate UPE',
+					'href'   => $this->get_action_url( 'enable_upe', true ),
+				]
+			);
+		}
+
 		if ( get_option( WC_Payments_Dev_Tools::REDIRECT_OPTION, false ) ) {
 			$admin_bar->add_menu(
 				[
@@ -187,6 +207,14 @@ class WooCommerce_Payments_Dev_Shortcuts {
 		switch ( $_GET['wcpay_dev_action'] ) {
 			case 'add_beanie_and_checkout':
 				$this->add_beanie_and_checkout();
+				break;
+
+			case 'enable_upe':
+				$this->enable_upe( $return_url );
+				break;
+
+			case 'disable_upe':
+				$this->disable_upe( $return_url );
 				break;
 
 			case 'use_sandbox':
@@ -260,6 +288,28 @@ class WooCommerce_Payments_Dev_Shortcuts {
 		}
 
 		wp_safe_redirect( $checkout_url );
+		exit;
+	}
+
+	/**
+	 * Enables UPE.
+	 *
+	 * @param string $return_url The URL of the current page, to be redirected back to.
+	 */
+	public function enable_upe( $return_url ) {
+		update_option( WC_Payments_Features::UPE_FLAG_NAME, '1' );
+		wp_safe_redirect( $return_url );
+		exit;
+	}
+
+	/**
+	 * Disables UPE.
+	 *
+	 * @param string $return_url The URL of the current page, to be redirected back to.
+	 */
+	public function disable_upe( $return_url ) {
+		update_option( WC_Payments_Features::UPE_FLAG_NAME, '0' );
+		wp_safe_redirect( $return_url );
 		exit;
 	}
 
