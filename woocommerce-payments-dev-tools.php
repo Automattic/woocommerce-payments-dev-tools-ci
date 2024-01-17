@@ -56,6 +56,15 @@ class WC_Payments_Dev_Tools {
 	public static function init() {
 		include_once __DIR__ . '/woocommerce-payments-dev-shortcuts.php';
 
+		( new WooCommerce_Payments_Dev_Shortcuts() )->add_hooks();
+
+		if ( class_exists( 'WC_Payments_Subscriptions' ) && get_option( self::BILLING_CLOCKS_OPTION, false ) ) {
+			require_once 'billing-clocks/class-wc-pay-dev-billing-renewal-tester.php';
+			WC_Pay_Dev_Billing_Renewal_Tester::init();
+		}
+	}
+
+	public static function init_hooks() {
 		add_action( 'admin_menu', [ __CLASS__, 'add_admin_page' ] );
 		add_action( 'admin_enqueue_scripts', [ __CLASS__, 'enqueue_assets' ] );
 		add_action( 'admin_head-toplevel_page_' . self::ID, [ __CLASS__, 'admin_page_head' ] );
@@ -72,13 +81,6 @@ class WC_Payments_Dev_Tools {
 		add_action( 'init', [ __CLASS__, 'maybe_force_disconnected' ] );
 		add_action( 'init', [ __CLASS__, 'maybe_override_woopay_eligible' ] );
 		add_filter( 'wcpay_new_payment_process_enabled_factors', [ __CLASS__, 'maybe_overwrite_payment_process_factors' ], 10, 4 );
-
-		( new WooCommerce_Payments_Dev_Shortcuts() )->add_hooks();
-
-		if ( class_exists( 'WC_Payments_Subscriptions' ) && get_option( self::BILLING_CLOCKS_OPTION, false ) ) {
-			require_once 'billing-clocks/class-wc-pay-dev-billing-renewal-tester.php';
-			WC_Pay_Dev_Billing_Renewal_Tester::init();
-		}
 	}
 
 	/**
@@ -1691,6 +1693,10 @@ function wcpay_dev_tools_init() {
 
 // Make sure we initialize after the init of the WooCommerce Payments plugin (currently at priority 11).
 add_action( 'plugins_loaded', 'wcpay_dev_tools_init', 999 );
+add_action( 'plugins_loaded', function() {
+		WC_Payments_Dev_Tools::init_hooks();
+	}
+);
 
 // Register these filters here since user authentication happens before our init function gets a chance to run.
 add_filter( 'determine_current_user', [ WC_Payments_Dev_Tools::class, 'mock_rest_authenticate' ], 999 );
