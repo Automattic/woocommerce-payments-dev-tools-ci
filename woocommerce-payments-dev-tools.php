@@ -13,6 +13,7 @@ class WC_Payments_Dev_Tools {
 	const ID = 'wcpaydev';
 	const DEV_MODE_OPTION = 'wcpaydev_dev_mode';
 	const FORCE_DISCONNECTED_OPTION = 'wcpaydev_force_disconnected';
+	const FORCE_CARD_TESTING_PROTECTION_ON = 'wcpaydev_force_card_testing_protection_on';
 	const RETRY_SERVER_WP_CRON_REDIRECTS = 'retry_server_wp_cron_redirects';
 	const DISPLAY_NOTICE = 'wcpaydev_display_notice';
 	const REDIRECT_OPTION = 'wcpaydev_redirect';
@@ -80,6 +81,9 @@ class WC_Payments_Dev_Tools {
 		add_filter( 'wcpay_api_request_response', [ __CLASS__, 'maybe_retry_server_wp_cron_redirects' ], 10, 4 );
 		add_action( 'init', [ __CLASS__, 'maybe_force_disconnected' ] );
 		add_action( 'init', [ __CLASS__, 'maybe_override_woopay_eligible' ] );
+
+		add_action( 'woocommerce_payments_account_refreshed', [ __CLASS__, 'maybe_force_card_testing_protection_on' ] );
+
 		add_filter( 'wcpay_new_payment_process_enabled_factors', [ __CLASS__, 'maybe_overwrite_payment_process_factors' ], 10, 4 );
 	}
 
@@ -339,6 +343,24 @@ class WC_Payments_Dev_Tools {
 		}
 
 		self::get_database_cache() && self::get_database_cache()->add( Database_Cache::ACCOUNT_KEY, [] );
+	}
+
+	public static function maybe_force_card_testing_protection_on() {
+		if ( ! self::get_database_cache() ) {
+			return;
+		}
+
+		$account_cache = self::get_database_cache()->get( Database_Cache::ACCOUNT_KEY );
+		if ( empty( $account_cache ) || ! is_array( $account_cache ) ) {
+			return;
+		}
+
+		$should_override_card_testing_protection_flag = boolval( get_option( self::FORCE_CARD_TESTING_PROTECTION_ON, '0' ) );
+		if( $should_override_card_testing_protection_flag ) {
+			$account_cache['card_testing_protection_eligible'] = boolval( $should_override_card_testing_protection_flag );
+
+			self::get_database_cache()->add( Database_Cache::ACCOUNT_KEY, $account_cache );
+		}
 	}
 
 	/**
@@ -639,6 +661,7 @@ class WC_Payments_Dev_Tools {
 		self::save_option_from_checkbox( self::PROGRESSIVE_ONBOARDING_FLAG_NAME, true );
 		self::save_option_from_checkbox( self::PAY_FOR_ORDER_FLOW, true );
 		self::save_option_from_checkbox( self::RETRY_SERVER_WP_CRON_REDIRECTS );
+		self::save_option_from_checkbox( self::FORCE_CARD_TESTING_PROTECTION_ON, true );
 
 		if ( class_exists( Factor::class ) ) {
 			self::save_option_from_checkbox( self::OVERWRITE_PAYMENT_PROCESS_FACTORS_FLAG_NAME );
@@ -828,6 +851,10 @@ class WC_Payments_Dev_Tools {
 					<?php self::render_checkbox(
 						self::FORCE_DISCONNECTED_OPTION, 'Force the WCPay plugin to act as <strong>disconnected from the WCPay Server</strong>',
 						'As long as this is checked, the WCPay account\'s cache contents are set to an empty array, regardless of what other steps are taken (reonboarding, etc.).'
+					); ?>
+					<?php self::render_checkbox(
+						self::FORCE_CARD_TESTING_PROTECTION_ON, 'Force the WCPay plugin to act with <strong>Card testing mitigations enabled on the WCPay Server</strong>',
+						'As long as this is checked, the WCPay client will act as the card testing mitigations are activated.'
 					); ?>
 
 					<?php self::render_checkbox( self::RETRY_SERVER_WP_CRON_REDIRECTS, 'Retry WP-Cron requests to WCPay server that result in a redirect response (<code>302</code> status code)' ); ?>
