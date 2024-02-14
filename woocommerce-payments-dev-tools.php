@@ -245,7 +245,7 @@ class WC_Payments_Dev_Tools {
 
 		// First, handle the WCPay API requests.
 		if ( get_option( self::REDIRECT_OPTION, false ) &&
-		     1 === preg_match( '/^https?:\/\/public-api\.wordpress\.com\/(.+?(?:wcpay|tumblrpay).+)/', $url, $matches ) ) {
+		     1 === preg_match( '/^https?:\/\/public-api\.wordpress\.com\/(.+?(?:wcpay|tumblrpay|woopayments).+)/', $url, $matches ) ) {
 			$redirect_to = trailingslashit( self::get_redirect_to() );
 
 			return wp_remote_request( $redirect_to . $matches[1], $args );
