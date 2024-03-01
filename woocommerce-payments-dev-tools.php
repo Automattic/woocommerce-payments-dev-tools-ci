@@ -35,6 +35,10 @@ class WC_Payments_Dev_Tools {
 	const OVERWRITE_PAYMENT_PROCESS_FACTORS_FLAG_NAME = '_wcpay_overwrite_payment_process_factors';
 	const PAYMENT_PROCESS_FACTOR_PREFIX = '_wcpay_payment_factor_';
 	const PAY_FOR_ORDER_FLOW = '_wcpay_feature_pay_for_order_flow';
+	const UPE_APPEARANCE_TRANSIENT = 'wcpay_upe_appearance';
+	const WC_BLOCKS_UPE_APPEARANCE_TRANSIENT = 'wcpay_wc_blocks_upe_appearance';
+	const UPE_APPEARANCE_THEME_TRANSIENT = 'wcpay_upe_appearance_theme';
+	const WC_BLOCKS_UPE_APPEARANCE_THEME_TRANSIENT = 'wcpay_wc_blocks_upe_appearance_theme';
 
 	/**
 	 * Helpers for GitHub access
@@ -168,6 +172,15 @@ class WC_Payments_Dev_Tools {
 				add_settings_error( 'actions', 'updated_stripe_data_on_server', esc_html__( 'Forced the update of the cached Stripe account data on the WCPay server. The store\'s account cache data was updated also.', 'wcpaydev' ), 'success' );
 			} else {
 				add_settings_error( 'actions', 'updated_stripe_data_on_server_error', esc_html__( 'Failed to force the update of the cached Stripe account data on the WCPay server.', 'wcpaydev' ), 'error' );
+			}
+		}
+
+		// Add a success notice if appearance transients were cleared.
+		if ( isset( $_GET['cleared-appearance-transients'] ) ) {
+			if ( 'success' === $_GET['cleared-appearance-transients'] ) {
+				add_settings_error( 'actions', 'cleared_appearance_transients', esc_html__( 'Cleared appearance transients.', 'wcpaydev' ), 'success' );
+			} else {
+				add_settings_error( 'actions', 'cleared_appearance_transients_error', esc_html__( 'Failed to clear appearance transients.', 'wcpaydev' ), 'error' );
 			}
 		}
 	}
@@ -615,6 +628,16 @@ class WC_Payments_Dev_Tools {
 			$result = self::force_update_stripe_account_data_on_server();
 
 			if ( wp_safe_redirect( add_query_arg( [ 'updated-stripe-data-on-server' => $result ? 'success' : 'error' ], self::get_settings_url() ) ) ) {
+				exit;
+			}
+		}
+
+		if ( isset( $_GET['wcpaydev-clear-appearance-transients'] ) ) {
+			check_admin_referer( 'wcpaydev-clear-appearance-transients' );
+
+			self::clear_appearance_transients();
+
+			if ( wp_safe_redirect( add_query_arg( [ 'cleared-appearance-transients' => 'success' ], self::get_settings_url() ) ) ) {
 				exit;
 			}
 		}
@@ -1132,6 +1155,8 @@ class WC_Payments_Dev_Tools {
 
 				<h3 class="has-description"><a href="<?php echo wp_nonce_url( add_query_arg( [ 'wcpaydev-fetch-live-rates' => 'yes' ], self::get_settings_url() ), 'wcpaydev-fetch-live-rates' ); ?>">Fetch latest currency rates</a></h3>
 				<p class="description">Works when <a class="external-link" href="https://woocommerce.com/document/payments/currencies/multi-currency-setup" target="_blank">WCPay Multi-Currency</a> is enabled.</p>
+				<h3 class="has-description"><a href="<?php echo wp_nonce_url( add_query_arg( [ 'wcpaydev-clear-appearance-transients' => 'yes' ], self::get_settings_url() ), 'wcpaydev-clear-appearance-transients' ); ?>">Delete UPE appearance transients</a></h3>
+				<p class="description">Deletes the UPE appearance transients and forces the appearance styles to be regenerated.</p>
 			</div>
 		</div>
 		<?php
@@ -1374,6 +1399,26 @@ class WC_Payments_Dev_Tools {
 		}
 
 		self::get_database_cache() && self::get_database_cache()->add( Database_Cache::ACCOUNT_KEY, $updated_account );
+
+		return true;
+	}
+
+	/**
+	 * Deletes the WooPayments appearance transients.
+	 *
+	 * @return boolean
+	 */
+	private static function clear_appearance_transients(): bool {
+		$transients = [
+			self::UPE_APPEARANCE_TRANSIENT,
+			self::WC_BLOCKS_UPE_APPEARANCE_TRANSIENT,
+			self::UPE_APPEARANCE_THEME_TRANSIENT,
+			self::WC_BLOCKS_UPE_APPEARANCE_THEME_TRANSIENT
+		];
+
+		foreach ( $transients as $transient ) {
+			delete_transient( $transient );
+		}
 
 		return true;
 	}
