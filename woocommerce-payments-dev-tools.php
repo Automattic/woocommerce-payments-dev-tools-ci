@@ -27,6 +27,7 @@ class WC_Payments_Dev_Tools {
 	const BILLING_CLOCKS_OPTION = 'wcpaydev_wcpay_billing_clock';
 	const BILLING_CLOCK_SECRET_KEY_OPTION = 'wcpay_billing_clock_secret';
 	const SUBSCRIPTIONS = '_wcpay_feature_subscriptions';
+	const TOKENIZED_CART_PRB_FLAG_NAME = '_wcpay_feature_tokenized_cart_prb';
 	const CAPITAL = '_wcpay_feature_capital';
 	const DOCUMENTS = '_wcpay_feature_documents';
 	const WOOPAY_OVERRIDE_PLATFORM_CHECKOUT_ELIGIBLE = 'override_woopay_eligible';
@@ -677,6 +678,7 @@ class WC_Payments_Dev_Tools {
 		self::save_option_from_checkbox( self::CAPITAL );
 		self::save_option_from_checkbox( self::DOCUMENTS );
 
+		self::save_option_from_checkbox( self::TOKENIZED_CART_PRB_FLAG_NAME );
 		self::save_option_from_checkbox( self::WOOPAY_OVERRIDE_PLATFORM_CHECKOUT_ELIGIBLE, true );
 		self::save_option( self::WOOPAY_OVERRIDE_PLATFORM_CHECKOUT_ELIGIBLE_VALUE );
 		self::save_option_from_checkbox( self::WOOPAY_EXPRESS_CHECKOUT_FLAG_NAME, true );
@@ -1017,6 +1019,7 @@ class WC_Payments_Dev_Tools {
 						</div>
 					</div>
 
+					<?php self::render_checkbox( self::TOKENIZED_CART_PRB_FLAG_NAME, 'Enable Cart-Token implementation for PRBs' ); ?>
 					<?php self::render_checkbox( self::CAPITAL, 'Enable Stripe Capital' ); ?>
 					<?php self::render_checkbox( self::DOCUMENTS, 'Enable WCPay Documents section' ); ?>
 					<?php self::render_checkbox( self::PAY_FOR_ORDER_FLOW, "Enable the Pay-for-order flow for WooPay", false ); ?>
@@ -1259,6 +1262,10 @@ class WC_Payments_Dev_Tools {
 
 		if ( get_option( self::DOCUMENTS, false ) ) {
 			$enabled_options[] = 'Account Documents section';
+		}
+
+		if ( get_option( self::TOKENIZED_CART_PRB_FLAG_NAME, false ) ) {
+			$enabled_options[] = 'Tokenized cart PRBs';
 		}
 
 		if ( get_option( self::WOOPAY_OVERRIDE_PLATFORM_CHECKOUT_ELIGIBLE, '0' ) ) {
