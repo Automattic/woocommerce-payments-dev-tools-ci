@@ -35,7 +35,6 @@ class WC_Payments_Dev_Tools {
 	const WOOPAY_EXPRESS_CHECKOUT_FLAG_NAME = '_wcpay_feature_woopay_express_checkout';
 	const OVERWRITE_PAYMENT_PROCESS_FACTORS_FLAG_NAME = '_wcpay_overwrite_payment_process_factors';
 	const PAYMENT_PROCESS_FACTOR_PREFIX = '_wcpay_payment_factor_';
-	const PAY_FOR_ORDER_FLOW = '_wcpay_feature_pay_for_order_flow';
 	const UPE_APPEARANCE_TRANSIENT = 'wcpay_upe_appearance';
 	const WC_BLOCKS_UPE_APPEARANCE_TRANSIENT = 'wcpay_wc_blocks_upe_appearance';
 	const UPE_APPEARANCE_THEME_TRANSIENT = 'wcpay_upe_appearance_theme';
@@ -682,7 +681,6 @@ class WC_Payments_Dev_Tools {
 		self::save_option_from_checkbox( self::WOOPAY_OVERRIDE_PLATFORM_CHECKOUT_ELIGIBLE, true );
 		self::save_option( self::WOOPAY_OVERRIDE_PLATFORM_CHECKOUT_ELIGIBLE_VALUE );
 		self::save_option_from_checkbox( self::WOOPAY_EXPRESS_CHECKOUT_FLAG_NAME, true );
-		self::save_option_from_checkbox( self::PAY_FOR_ORDER_FLOW, true );
 		self::save_option_from_checkbox( self::RETRY_SERVER_WP_CRON_REDIRECTS );
 		self::save_option_from_checkbox( self::FORCE_CARD_TESTING_PROTECTION_ON, true );
 
@@ -1022,7 +1020,6 @@ class WC_Payments_Dev_Tools {
 					<?php self::render_checkbox( self::TOKENIZED_CART_PRB_FLAG_NAME, 'Enable Cart-Token implementation for PRBs' ); ?>
 					<?php self::render_checkbox( self::CAPITAL, 'Enable Stripe Capital' ); ?>
 					<?php self::render_checkbox( self::DOCUMENTS, 'Enable WCPay Documents section' ); ?>
-					<?php self::render_checkbox( self::PAY_FOR_ORDER_FLOW, "Enable the Pay-for-order flow for WooPay", false ); ?>
 
 					<h4>New Payment Process Factors</h4>
 
