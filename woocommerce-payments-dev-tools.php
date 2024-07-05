@@ -12,6 +12,7 @@ use WCPay\Internal\Payment\Factor;
 class WC_Payments_Dev_Tools {
 	const ID = 'wcpaydev';
 	const DEV_MODE_OPTION = 'wcpaydev_dev_mode';
+	const V2_GATEWAY_FLAG_NAME = '_wcpay_feature_v2_gateway';
 	const FORCE_DISCONNECTED_OPTION = 'wcpaydev_force_disconnected';
 	const FORCE_CARD_TESTING_PROTECTION_ON = 'wcpaydev_force_card_testing_protection_on';
 	const RETRY_SERVER_WP_CRON_REDIRECTS = 'retry_server_wp_cron_redirects';
@@ -677,6 +678,7 @@ class WC_Payments_Dev_Tools {
 		self::save_option_from_checkbox( self::CAPITAL );
 		self::save_option_from_checkbox( self::DOCUMENTS );
 
+		self::save_option_from_checkbox( self::V2_GATEWAY_FLAG_NAME );
 		self::save_option_from_checkbox( self::TOKENIZED_CART_PRB_FLAG_NAME );
 		self::save_option_from_checkbox( self::WOOPAY_OVERRIDE_PLATFORM_CHECKOUT_ELIGIBLE, true );
 		self::save_option( self::WOOPAY_OVERRIDE_PLATFORM_CHECKOUT_ELIGIBLE_VALUE );
@@ -1017,6 +1019,7 @@ class WC_Payments_Dev_Tools {
 						</div>
 					</div>
 
+					<?php self::render_checkbox( self::V2_GATEWAY_FLAG_NAME, 'Enable V2 gateway' ); ?>
 					<?php self::render_checkbox( self::TOKENIZED_CART_PRB_FLAG_NAME, 'Enable Cart-Token implementation for PRBs' ); ?>
 					<?php self::render_checkbox( self::CAPITAL, 'Enable Stripe Capital' ); ?>
 					<?php self::render_checkbox( self::DOCUMENTS, 'Enable WCPay Documents section' ); ?>
