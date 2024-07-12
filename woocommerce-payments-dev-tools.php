@@ -40,6 +40,7 @@ class WC_Payments_Dev_Tools {
 	const WC_BLOCKS_UPE_APPEARANCE_TRANSIENT = 'wcpay_wc_blocks_upe_appearance';
 	const UPE_APPEARANCE_THEME_TRANSIENT = 'wcpay_upe_appearance_theme';
 	const WC_BLOCKS_UPE_APPEARANCE_THEME_TRANSIENT = 'wcpay_wc_blocks_upe_appearance_theme';
+	const WOOPAY_GLOBAL_THEME_SUPPORT = 'woopay_global_theme_support';
 
 	/**
 	 * Helpers for GitHub access
@@ -685,6 +686,8 @@ class WC_Payments_Dev_Tools {
 		self::save_option_from_checkbox( self::WOOPAY_EXPRESS_CHECKOUT_FLAG_NAME, true );
 		self::save_option_from_checkbox( self::RETRY_SERVER_WP_CRON_REDIRECTS );
 		self::save_option_from_checkbox( self::FORCE_CARD_TESTING_PROTECTION_ON, true );
+		self::save_option_from_checkbox( self::WOOPAY_GLOBAL_THEME_SUPPORT );
+
 
 		if ( class_exists( Factor::class ) ) {
 			self::save_option_from_checkbox( self::OVERWRITE_PAYMENT_PROCESS_FACTORS_FLAG_NAME );
@@ -1083,6 +1086,7 @@ class WC_Payments_Dev_Tools {
 					</label><br/>
 
 					<?php self::render_checkbox( self::WOOPAY_EXPRESS_CHECKOUT_FLAG_NAME, 'Enable the WooPay Express Checkout button' ); ?>
+					<?php self::render_checkbox( self::WOOPAY_GLOBAL_THEME_SUPPORT, 'Enable WooPay global theme support' ); ?>
 				</fieldset>
 			</td>
 		</tr>
@@ -1275,6 +1279,10 @@ class WC_Payments_Dev_Tools {
 
 		if ( get_option( self::WOOPAY_EXPRESS_CHECKOUT_FLAG_NAME, '0' ) ) {
 			$enabled_options[] = 'WooPay Express Checkout button';
+		}
+
+		if ( get_option( self::WOOPAY_GLOBAL_THEME_SUPPORT, false ) ) {
+			$enabled_options[] = 'WooPay global theme support';
 		}
 
 		if ( empty( $enabled_options ) ) {
