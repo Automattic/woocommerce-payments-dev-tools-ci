@@ -25,6 +25,8 @@ delete_option( 'wcpaydev_wcpay_billing_clock' );
 delete_option( 'wcpay_billing_clock_secret' );
 delete_option( 'override_woopay_eligible' );
 delete_option( 'override_woopay_eligible_value' );
+delete_option( 'override_woopay_default_opt_in' );
+delete_option( 'override_woopay_default_opt_in_value' );
 
 // Unlink our GitHub releases cache filename before deleting option.
 $github_releases_cache_filename = get_option( 'wcpaydev_wcpay_releases_list_filename' );

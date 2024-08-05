@@ -33,6 +33,8 @@ class WC_Payments_Dev_Tools {
 	const DOCUMENTS = '_wcpay_feature_documents';
 	const WOOPAY_OVERRIDE_PLATFORM_CHECKOUT_ELIGIBLE = 'override_woopay_eligible';
 	const WOOPAY_OVERRIDE_PLATFORM_CHECKOUT_ELIGIBLE_VALUE = 'override_woopay_eligible_value';
+	const WOOPAY_OVERRIDE_PLATFORM_CHECKOUT_DEFAULT_OPT_IN = 'override_woopay_default_optin';
+	const WOOPAY_OVERRIDE_PLATFORM_CHECKOUT_DEFAULT_OPT_IN_VALUE = 'override_woopay_default_opt_in_value';
 	const WOOPAY_EXPRESS_CHECKOUT_FLAG_NAME = '_wcpay_feature_woopay_express_checkout';
 	const OVERWRITE_PAYMENT_PROCESS_FACTORS_FLAG_NAME = '_wcpay_overwrite_payment_process_factors';
 	const PAYMENT_PROCESS_FACTOR_PREFIX = '_wcpay_payment_factor_';
@@ -86,6 +88,7 @@ class WC_Payments_Dev_Tools {
 		add_filter( 'wcpay_api_request_response', [ __CLASS__, 'maybe_retry_server_wp_cron_redirects' ], 10, 4 );
 		add_action( 'init', [ __CLASS__, 'maybe_force_disconnected' ] );
 		add_action( 'init', [ __CLASS__, 'maybe_override_woopay_eligible' ] );
+		add_action( 'init', [ __CLASS__, 'maybe_override_woopay_default_opt_in' ] );
 
 		add_action( 'woocommerce_payments_account_refreshed', [ __CLASS__, 'maybe_force_card_testing_protection_on' ] );
 
@@ -491,6 +494,30 @@ class WC_Payments_Dev_Tools {
 	}
 
 	/**
+	 * Override the platform checkout default opt-in status.
+	 *
+	 * @return void
+	 */
+	public static function maybe_override_woopay_default_opt_in() {
+		if ( ! self::get_database_cache() ) {
+			return;
+		}
+
+		$account_cache = self::get_database_cache()->get( Database_Cache::ACCOUNT_KEY );
+		if ( empty( $account_cache ) || ! is_array( $account_cache ) ) {
+			return;
+		}
+
+		$should_override_woopay_eligible = boolval( get_option( self::WOOPAY_OVERRIDE_PLATFORM_CHECKOUT_DEFAULT_OPT_IN, '0' ) );
+		if ( $should_override_woopay_eligible ) {
+			$override_woopay_default_opt_in   = get_option( self::WOOPAY_OVERRIDE_PLATFORM_CHECKOUT_DEFAULT_OPT_IN_VALUE, '0' );
+			$account_cache['pre_check_save_my_info'] = boolval( $override_woopay_default_opt_in );
+
+			self::get_database_cache()->add( Database_Cache::ACCOUNT_KEY, $account_cache );
+		}
+	}
+
+	/**
 	 * Returns the settings URL of WCPay.
 	 *
 	 * @return string The URL.
@@ -683,6 +710,8 @@ class WC_Payments_Dev_Tools {
 		self::save_option_from_checkbox( self::TOKENIZED_CART_PRB_FLAG_NAME );
 		self::save_option_from_checkbox( self::WOOPAY_OVERRIDE_PLATFORM_CHECKOUT_ELIGIBLE, true );
 		self::save_option( self::WOOPAY_OVERRIDE_PLATFORM_CHECKOUT_ELIGIBLE_VALUE );
+		self::save_option_from_checkbox( self::WOOPAY_OVERRIDE_PLATFORM_CHECKOUT_DEFAULT_OPT_IN, true );
+		self::save_option( self::WOOPAY_OVERRIDE_PLATFORM_CHECKOUT_DEFAULT_OPT_IN_VALUE );
 		self::save_option_from_checkbox( self::WOOPAY_EXPRESS_CHECKOUT_FLAG_NAME, true );
 		self::save_option_from_checkbox( self::RETRY_SERVER_WP_CRON_REDIRECTS );
 		self::save_option_from_checkbox( self::FORCE_CARD_TESTING_PROTECTION_ON, true );
@@ -1085,6 +1114,21 @@ class WC_Payments_Dev_Tools {
 						</select>
 					</label><br/>
 
+					<label for="<?php echo esc_attr( self::WOOPAY_OVERRIDE_PLATFORM_CHECKOUT_DEFAULT_OPT_IN ); ?>">
+						<input name="<?php echo esc_attr( self::WOOPAY_OVERRIDE_PLATFORM_CHECKOUT_DEFAULT_OPT_IN ); ?>"
+							   type="checkbox"
+							   id="<?php echo esc_attr( self::WOOPAY_OVERRIDE_PLATFORM_CHECKOUT_DEFAULT_OPT_IN ); ?>"
+							   value="1" <?php checked( '1', get_option( self::WOOPAY_OVERRIDE_PLATFORM_CHECKOUT_DEFAULT_OPT_IN ) ); ?> />
+						Force the <code>pre_check_save_my_info</code> flag (aka Default Opt-in) in the account cache to be </label>
+					<label for="<?php echo esc_attr( self::WOOPAY_OVERRIDE_PLATFORM_CHECKOUT_DEFAULT_OPT_IN_VALUE ); ?>">
+						<?php $current_override_value = get_option( self::WOOPAY_OVERRIDE_PLATFORM_CHECKOUT_DEFAULT_OPT_IN_VALUE ); ?>
+						<select name="<?php echo esc_attr( self::WOOPAY_OVERRIDE_PLATFORM_CHECKOUT_DEFAULT_OPT_IN_VALUE ); ?>"
+								id="<?php echo esc_attr( self::WOOPAY_OVERRIDE_PLATFORM_CHECKOUT_DEFAULT_OPT_IN_VALUE ); ?>">
+							<option value="1" <?php selected( '1', $current_override_value ); ?>>true</option>
+							<option value="0" <?php selected( '0', $current_override_value ); ?>>false</option>
+						</select>
+					</label><br/>
+
 					<?php self::render_checkbox( self::WOOPAY_EXPRESS_CHECKOUT_FLAG_NAME, 'Enable the WooPay Express Checkout button' ); ?>
 					<?php self::render_checkbox( self::WOOPAY_GLOBAL_THEME_SUPPORT, 'Enable WooPay global theme support' ); ?>
 				</fieldset>
@@ -1275,6 +1319,11 @@ class WC_Payments_Dev_Tools {
 		if ( get_option( self::WOOPAY_OVERRIDE_PLATFORM_CHECKOUT_ELIGIBLE, '0' ) ) {
 			$overriding_value  = get_option( self::WOOPAY_OVERRIDE_PLATFORM_CHECKOUT_ELIGIBLE_VALUE, '0' ) ? 'true' : 'false';
 			$enabled_options[] = 'Overriding the platform_checkout_eligible flag in the account cache to <code>' . $overriding_value . '</code>';
+		}
+
+		if ( get_option( self::WOOPAY_OVERRIDE_PLATFORM_CHECKOUT_DEFAULT_OPT_IN, '0' ) ) {
+			$overriding_value  = get_option( self::WOOPAY_OVERRIDE_PLATFORM_CHECKOUT_DEFAULT_OPT_IN_VALUE, '0' ) ? 'true' : 'false';
+			$enabled_options[] = 'Overriding the pre_check_save_my_info flag in the account cache to <code>' . $overriding_value . '</code>';
 		}
 
 		if ( get_option( self::WOOPAY_EXPRESS_CHECKOUT_FLAG_NAME, '0' ) ) {
