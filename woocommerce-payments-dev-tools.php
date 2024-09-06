@@ -1,7 +1,7 @@
 <?php
 /**
- * Plugin Name: WooCommerce Payments Dev Tools
- * Description: Dev tools for WooCommerce Payments. Only effective when WooCommerce Payments is active.
+ * Plugin Name: WooPayments Dev Tools
+ * Description: Dev tools for WooPayments. Only effective when WooPayments is active.
  * Author: Automattic
  * Author URI: https://woocommerce.com/
  */
@@ -88,8 +88,8 @@ class WC_Payments_Dev_Tools {
 		add_filter( 'upgrader_pre_download', [ __CLASS__, 'maybe_override_wcpay_version' ], 10, 4 );
 		add_filter( 'wcpay_api_request_response', [ __CLASS__, 'maybe_retry_server_wp_cron_redirects' ], 10, 4 );
 		add_action( 'init', [ __CLASS__, 'maybe_force_disconnected' ] );
-		add_action( 'init', [ __CLASS__, 'maybe_override_woopay_eligible' ] );
-		add_action( 'init', [ __CLASS__, 'maybe_override_woopay_default_opt_in' ] );
+
+		add_filter( 'option_wcpay_account_data', [ __CLASS__, 'maybe_override_woopay_account_data_details' ], 999, 1 );
 
 		add_action( 'woocommerce_payments_account_refreshed', [ __CLASS__, 'maybe_force_card_testing_protection_on' ] );
 
@@ -471,51 +471,42 @@ class WC_Payments_Dev_Tools {
 	}
 
 	/**
-	 * Override the platform checkout merchant eligibility.
+	 * Filters account cache DB option value to maybe override certain WooPay flags.
 	 *
-	 * @return void
+	 * @param mixed $cache_contents The account cache DB option value.
+	 *
+	 * @return mixed The filtered value.
 	 */
-	public static function maybe_override_woopay_eligible() {
-		if ( ! self::get_database_cache() ) {
-			return;
+	public static function maybe_override_woopay_account_data_details( $cache_contents ) {
+		// First, check that we have valid account cache contents.
+		if ( ! is_array( $cache_contents )
+		     || empty( $cache_contents )
+		     || ! array_key_exists( 'data', $cache_contents )
+		     || ! isset( $cache_contents['fetched'] )
+		     || ! array_key_exists( 'errored', $cache_contents )
+		) {
+			return $cache_contents;
 		}
 
-		$account_cache = self::get_database_cache()->get( Database_Cache::ACCOUNT_KEY );
-		if ( empty( $account_cache ) || ! is_array( $account_cache ) ) {
-			return;
+		// Next, check that we have valid account data in the cache.
+		if ( empty( $cache_contents['data'] ) || ! is_array( $cache_contents['data'] ) ) {
+			return $cache_contents;
 		}
 
+		// Now, do our overrides.
 		$should_override_woopay_eligible = boolval( get_option( self::WOOPAY_OVERRIDE_PLATFORM_CHECKOUT_ELIGIBLE, '0' ) );
 		if ( $should_override_woopay_eligible ) {
 			$override_woopay_eligible_value   = get_option( self::WOOPAY_OVERRIDE_PLATFORM_CHECKOUT_ELIGIBLE_VALUE, '0' );
-			$account_cache['platform_checkout_eligible'] = boolval( $override_woopay_eligible_value );
-
-			self::get_database_cache()->add( Database_Cache::ACCOUNT_KEY, $account_cache );
-		}
-	}
-
-	/**
-	 * Override the platform checkout default opt-in status.
-	 *
-	 * @return void
-	 */
-	public static function maybe_override_woopay_default_opt_in() {
-		if ( ! self::get_database_cache() ) {
-			return;
+			$cache_contents['data']['platform_checkout_eligible'] = boolval( $override_woopay_eligible_value );
 		}
 
-		$account_cache = self::get_database_cache()->get( Database_Cache::ACCOUNT_KEY );
-		if ( empty( $account_cache ) || ! is_array( $account_cache ) ) {
-			return;
-		}
-
-		$should_override_woopay_eligible = boolval( get_option( self::WOOPAY_OVERRIDE_PLATFORM_CHECKOUT_DEFAULT_OPT_IN, '0' ) );
-		if ( $should_override_woopay_eligible ) {
+		$should_override_woopay_default_opt_in = boolval( get_option( self::WOOPAY_OVERRIDE_PLATFORM_CHECKOUT_DEFAULT_OPT_IN, '0' ) );
+		if ( $should_override_woopay_default_opt_in ) {
 			$override_woopay_default_opt_in   = get_option( self::WOOPAY_OVERRIDE_PLATFORM_CHECKOUT_DEFAULT_OPT_IN_VALUE, '0' );
-			$account_cache['pre_check_save_my_info'] = boolval( $override_woopay_default_opt_in );
-
-			self::get_database_cache()->add( Database_Cache::ACCOUNT_KEY, $account_cache );
+			$cache_contents['data']['pre_check_save_my_info'] = boolval( $override_woopay_default_opt_in );
 		}
+
+		return $cache_contents;
 	}
 
 	/**
@@ -833,7 +824,7 @@ class WC_Payments_Dev_Tools {
 		?>
 		<h2>Account cache contents <a href="<?php echo wp_nonce_url( add_query_arg( [ 'wcpaydev-clear-cache' => 'yes' ], self::get_settings_url() ), 'wcpaydev-clear-cache' ); ?>">(clear)</a></h2>
 		<?php if ( ! empty( $account_cache['fetched'] ) ) { ?>
-			<p>The account data was last fetched from the WCPay Server: <strong><?php echo human_time_diff( intval( $account_cache['fetched'] ) ) ?> ago.</strong></p>
+			<p>The account data was last fetched from the WCPay Server: <strong><?php echo human_time_diff( intval( $account_cache['fetched'] ) ) ?> ago</strong> (timestamp: <code><?php echo intval( $account_cache['fetched'] ) ?></code>).</p>
 		<?php }
 
 		if ( is_array( $account_cache )
@@ -1826,7 +1817,7 @@ function wcpay_dev_tools_init() {
 	}
 }
 
-// Make sure we initialize after the init of the WooCommerce Payments plugin (currently at priority 11).
+// Make sure we initialize after the init of the WooPayments plugin (currently at priority 11).
 add_action( 'plugins_loaded', 'wcpay_dev_tools_init', 999 );
 add_action( 'plugins_loaded', function() {
 		WC_Payments_Dev_Tools::init_hooks();
