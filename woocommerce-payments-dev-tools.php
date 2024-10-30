@@ -35,6 +35,8 @@ class WC_Payments_Dev_Tools {
 	const WOOPAY_OVERRIDE_PLATFORM_CHECKOUT_ELIGIBLE_VALUE = 'override_woopay_eligible_value';
 	const WOOPAY_OVERRIDE_PLATFORM_CHECKOUT_DEFAULT_OPT_IN = 'override_woopay_default_optin';
 	const WOOPAY_OVERRIDE_PLATFORM_CHECKOUT_DEFAULT_OPT_IN_VALUE = 'override_woopay_default_opt_in_value';
+	const WOOPAY_OVERRIDE_GLOBAL_THEME_SUPPORT = 'override_woopay_global_theme_support';
+	const WOOPAY_OVERRIDE_GLOBAL_THEME_SUPPORT_VALUE = 'override_woopay_global_theme_support_value';
 	const WOOPAY_EXPRESS_CHECKOUT_FLAG_NAME = '_wcpay_feature_woopay_express_checkout';
 	const OVERWRITE_PAYMENT_PROCESS_FACTORS_FLAG_NAME = '_wcpay_overwrite_payment_process_factors';
 	const PAYMENT_PROCESS_FACTOR_PREFIX = '_wcpay_payment_factor_';
@@ -42,7 +44,6 @@ class WC_Payments_Dev_Tools {
 	const WC_BLOCKS_UPE_APPEARANCE_TRANSIENT = 'wcpay_wc_blocks_upe_appearance';
 	const UPE_APPEARANCE_THEME_TRANSIENT = 'wcpay_upe_appearance_theme';
 	const WC_BLOCKS_UPE_APPEARANCE_THEME_TRANSIENT = 'wcpay_wc_blocks_upe_appearance_theme';
-	const WOOPAY_GLOBAL_THEME_SUPPORT = 'woopay_global_theme_support';
 
 	/**
 	 * Helpers for GitHub access
@@ -505,6 +506,12 @@ class WC_Payments_Dev_Tools {
 			$cache_contents['data']['pre_check_save_my_info'] = boolval( $override_woopay_default_opt_in );
 		}
 
+		$should_override_woopay_default_opt_in = boolval( get_option( self::WOOPAY_OVERRIDE_GLOBAL_THEME_SUPPORT, '0' ) );
+		if ( $should_override_woopay_default_opt_in ) {
+			$override_woopay_default_opt_in   = get_option( self::WOOPAY_OVERRIDE_GLOBAL_THEME_SUPPORT_VALUE, '0' );
+			$cache_contents['data']['platform_global_theme_support_enabled'] = boolval( $override_woopay_default_opt_in );
+		}
+
 		return $cache_contents;
 	}
 
@@ -703,10 +710,11 @@ class WC_Payments_Dev_Tools {
 		self::save_option( self::WOOPAY_OVERRIDE_PLATFORM_CHECKOUT_ELIGIBLE_VALUE );
 		self::save_option_from_checkbox( self::WOOPAY_OVERRIDE_PLATFORM_CHECKOUT_DEFAULT_OPT_IN, true );
 		self::save_option( self::WOOPAY_OVERRIDE_PLATFORM_CHECKOUT_DEFAULT_OPT_IN_VALUE );
+		self::save_option_from_checkbox( self::WOOPAY_OVERRIDE_GLOBAL_THEME_SUPPORT, true );
+		self::save_option( self::WOOPAY_OVERRIDE_GLOBAL_THEME_SUPPORT_VALUE );
 		self::save_option_from_checkbox( self::WOOPAY_EXPRESS_CHECKOUT_FLAG_NAME, true );
 		self::save_option_from_checkbox( self::RETRY_SERVER_WP_CRON_REDIRECTS );
 		self::save_option_from_checkbox( self::FORCE_CARD_TESTING_PROTECTION_ON, true );
-		self::save_option_from_checkbox( self::WOOPAY_GLOBAL_THEME_SUPPORT );
 
 
 		if ( class_exists( Factor::class ) ) {
@@ -1120,8 +1128,22 @@ class WC_Payments_Dev_Tools {
 						</select>
 					</label><br/>
 
+					<label for="<?php echo esc_attr( self::WOOPAY_OVERRIDE_GLOBAL_THEME_SUPPORT ); ?>">
+						<input name="<?php echo esc_attr( self::WOOPAY_OVERRIDE_GLOBAL_THEME_SUPPORT ); ?>"
+							type="checkbox"
+							id="<?php echo esc_attr( self::WOOPAY_OVERRIDE_GLOBAL_THEME_SUPPORT ); ?>"
+							value="1" <?php checked( '1', get_option( self::WOOPAY_OVERRIDE_GLOBAL_THEME_SUPPORT ) ); ?> />
+						Force the <code>platform_global_theme_support_enabled</code> flag (aka Global Theme Support) in the account cache to be </label>
+						<label for="<?php echo esc_attr( self::WOOPAY_OVERRIDE_GLOBAL_THEME_SUPPORT_VALUE ); ?>">
+						<?php $current_override_value = get_option( self::WOOPAY_OVERRIDE_GLOBAL_THEME_SUPPORT_VALUE ); ?>
+						<select name="<?php echo esc_attr( self::WOOPAY_OVERRIDE_GLOBAL_THEME_SUPPORT_VALUE ); ?>"
+								id="<?php echo esc_attr( self::WOOPAY_OVERRIDE_GLOBAL_THEME_SUPPORT_VALUE ); ?>">
+						<option value="1" <?php selected( '1', $current_override_value ); ?>>true</option>
+						<option value="0" <?php selected( '0', $current_override_value ); ?>>false</option>
+						</select>
+					</label><br/>
+
 					<?php self::render_checkbox( self::WOOPAY_EXPRESS_CHECKOUT_FLAG_NAME, 'Enable the WooPay Express Checkout button' ); ?>
-					<?php self::render_checkbox( self::WOOPAY_GLOBAL_THEME_SUPPORT, 'Enable WooPay global theme support' ); ?>
 				</fieldset>
 			</td>
 		</tr>
@@ -1317,12 +1339,13 @@ class WC_Payments_Dev_Tools {
 			$enabled_options[] = 'Overriding the pre_check_save_my_info flag in the account cache to <code>' . $overriding_value . '</code>';
 		}
 
-		if ( get_option( self::WOOPAY_EXPRESS_CHECKOUT_FLAG_NAME, '0' ) ) {
-			$enabled_options[] = 'WooPay Express Checkout button';
+		if ( get_option( self::WOOPAY_OVERRIDE_GLOBAL_THEME_SUPPORT, '0' ) ) {
+			$overriding_value  = get_option( self::WOOPAY_OVERRIDE_GLOBAL_THEME_SUPPORT_VALUE, '0' ) ? 'true' : 'false';
+			$enabled_options[] = 'Overriding the platform_global_theme_support_enabled flag in the account cache to <code>' . $overriding_value . '</code>';
 		}
 
-		if ( get_option( self::WOOPAY_GLOBAL_THEME_SUPPORT, false ) ) {
-			$enabled_options[] = 'WooPay global theme support';
+		if ( get_option( self::WOOPAY_EXPRESS_CHECKOUT_FLAG_NAME, '0' ) ) {
+			$enabled_options[] = 'WooPay Express Checkout button';
 		}
 
 		if ( empty( $enabled_options ) ) {
