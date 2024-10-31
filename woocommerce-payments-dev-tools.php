@@ -166,18 +166,18 @@ class WC_Payments_Dev_Tools {
 		// Add a success notice if multi-currency live rates were fetched.
 		if ( isset( $_GET['fetched-live-rates'] ) ) {
 			if ( 'success' === $_GET['fetched-live-rates'] ) {
-				add_settings_error( 'actions', 'fetched_live_rates', esc_html__( 'Fetched live rates from the WCPay server.', 'wcpaydev' ), 'success' );
+				add_settings_error( 'actions', 'fetched_live_rates', esc_html__( 'Fetched live rates from the Transact Platform server.', 'wcpaydev' ), 'success' );
 			} else {
-				add_settings_error( 'actions', 'fetched_live_rates_error', esc_html__( 'Failed to fetched live rates from the WCPay server.', 'wcpaydev' ), 'error' );
+				add_settings_error( 'actions', 'fetched_live_rates_error', esc_html__( 'Failed to fetched live rates from the Transact Platform server.', 'wcpaydev' ), 'error' );
 			}
 		}
 
 		// Add a success notice if the server Stripe account cached data was refreshed.
 		if ( isset( $_GET['updated-stripe-data-on-server'] ) ) {
 			if ( 'success' === $_GET['updated-stripe-data-on-server'] ) {
-				add_settings_error( 'actions', 'updated_stripe_data_on_server', esc_html__( 'Forced the update of the cached Stripe account data on the WCPay server. The store\'s account cache data was updated also.', 'wcpaydev' ), 'success' );
+				add_settings_error( 'actions', 'updated_stripe_data_on_server', esc_html__( 'Forced the update of the cached Stripe account data on the Transact Platform server. The store\'s account cache data was updated also.', 'wcpaydev' ), 'success' );
 			} else {
-				add_settings_error( 'actions', 'updated_stripe_data_on_server_error', esc_html__( 'Failed to force the update of the cached Stripe account data on the WCPay server.', 'wcpaydev' ), 'error' );
+				add_settings_error( 'actions', 'updated_stripe_data_on_server_error', esc_html__( 'Failed to force the update of the cached Stripe account data on the Transact Platform server.', 'wcpaydev' ), 'error' );
 			}
 		}
 
@@ -324,7 +324,7 @@ class WC_Payments_Dev_Tools {
 	 * @return array The changed arguments.
 	 */
 	public static function maybe_force_re_onboarding( array $args ): array {
-		// Be extra sure when we add the force_on_boarding flag to the WCPay server onboarding request. Just to be safe.
+		// Be extra sure when we add the force_on_boarding flag to the Transact Platform server onboarding request. Just to be safe.
 		if ( isset( $_GET['force-reonboarding'] )
 		     && 'yes' === $_GET['force-reonboarding']
 		     && isset( $_GET['wcpay-connect'] )
@@ -383,7 +383,7 @@ class WC_Payments_Dev_Tools {
 
 	/**
 	 * If RETRY_SERVER_WP_CRON_REDIRECTS is checked, look for 302 response code and doing_wp_cron query parameter and if
-	 * both are present - retry the request, as it's caused by the WP Cron job running on the local WCPay Server env.
+	 * both are present - retry the request, as it's caused by the WP Cron job running on the local Transact Platform Server env.
 	 *
 	 * @param array  $response The response to check if it needs a retry
 	 * @param string $method   The HTTP request method.
@@ -532,7 +532,7 @@ class WC_Payments_Dev_Tools {
 	 * Returns the URL to use for reaching the WCPay onboarding screen.
 	 *
 	 * @param bool $force_re_onboard Optional. Whether to force the creation of a new Stripe account when
-	 *                               following the onboarding URL. This behavior is controlled by the WCPay Server,
+	 *                               following the onboarding URL. This behavior is controlled by the Transact Platform Server,
 	 *                               and it is only available to proxied A12s.
 	 *
 	 * @return string The URL.
@@ -830,16 +830,16 @@ class WC_Payments_Dev_Tools {
 		?>
 		<h2>Account cache contents <a href="<?php echo wp_nonce_url( add_query_arg( [ 'wcpaydev-clear-cache' => 'yes' ], self::get_settings_url() ), 'wcpaydev-clear-cache' ); ?>">(clear)</a></h2>
 		<?php if ( ! empty( $account_cache['fetched'] ) ) { ?>
-			<p>The account data was last fetched from the WCPay Server: <strong><?php echo human_time_diff( intval( $account_cache['fetched'] ) ) ?> ago</strong> (timestamp: <code><?php echo intval( $account_cache['fetched'] ) ?></code>).</p>
+			<p>The account data was last fetched from the Transact Platform Server: <strong><?php echo human_time_diff( intval( $account_cache['fetched'] ) ) ?> ago</strong> (timestamp: <code><?php echo intval( $account_cache['fetched'] ) ?></code>).</p>
 		<?php }
 
 		if ( is_array( $account_cache )
 			&& ! empty( $account_cache['errored'] ) ) { ?>
-			<p>❗️ There was a problem getting the account data. If you target <strong>your local WCPay server,</strong> make sure it is running and you are redirecting WCPay API requests to it 🤔</p>
+			<p>❗️ There was a problem getting the account data. If you target <strong>your local Transact Platform server,</strong> make sure it is running and you are redirecting WCPay API requests to it 🤔</p>
 		<?php } elseif ( is_array( $account_cache )
 						&& empty( $account_cache['data'] )
 						&& get_option( self::FORCE_DISCONNECTED_OPTION, false ) ) { ?>
-			<p>ℹ️ The cache contents are empty because you have the "Force the WCPay plugin to act as disconnected from the WCPay Server" option enabled.</p>
+			<p>ℹ️ The cache contents are empty because you have the "Force the WCPay plugin to act as disconnected from the Transact Platform Server" option enabled.</p>
 		<?php } ?>
 		<div class="code-container">
 			<pre><code class="language-php"><?php
@@ -903,15 +903,15 @@ class WC_Payments_Dev_Tools {
 						true
 					); ?>
 					<?php self::render_checkbox(
-						self::FORCE_DISCONNECTED_OPTION, 'Force the WCPay plugin to act as <strong>disconnected from the WCPay Server</strong>',
+						self::FORCE_DISCONNECTED_OPTION, 'Force the WCPay plugin to act as <strong>disconnected from the Transact Platform Server</strong>',
 						'As long as this is checked, the WCPay account\'s cache contents are set to an empty array, regardless of what other steps are taken (reonboarding, etc.).'
 					); ?>
 					<?php self::render_checkbox(
-						self::FORCE_CARD_TESTING_PROTECTION_ON, 'Force the WCPay plugin to act with <strong>Card testing mitigations enabled on the WCPay Server</strong>',
+						self::FORCE_CARD_TESTING_PROTECTION_ON, 'Force the WCPay plugin to act with <strong>Card testing mitigations enabled on the Transact Platform Server</strong>',
 						'As long as this is checked, the WCPay client will act as the card testing mitigations are activated.'
 					); ?>
 
-					<?php self::render_checkbox( self::RETRY_SERVER_WP_CRON_REDIRECTS, 'Retry WP-Cron requests to WCPay server that result in a redirect response (<code>302</code> status code)' ); ?>
+					<?php self::render_checkbox( self::RETRY_SERVER_WP_CRON_REDIRECTS, 'Retry WP-Cron requests to Transact Platform server that result in a redirect response (<code>302</code> status code)' ); ?>
 					<?php self::render_checkbox( self::DISPLAY_NOTICE, 'Display a <strong>WP admin-wide notice</strong> with the currently enabled WCPay Dev Tools settings', '', true ); ?>
 
 					<label for="<?php echo( self::WCPAY_RELEASE_TAG ); ?>">
@@ -966,7 +966,7 @@ class WC_Payments_Dev_Tools {
 						/>
 					</label><br/>
 					<p class="description checkbox-description">All WCPay WPCOM public API requests (<code>https://public-api.wordpress.com</code>)
-						will be redirected.<br>The default value redirects to your local WCPay Server REST API (Docker
+						will be redirected.<br>The default value redirects to your local Transact Platform Server REST API (Docker
 						container). Empty and save to <em>revert</em> to the default redirect.</p>
 
 					<label for="<?php echo esc_attr( self::PROXY_OPTION ); ?>">
@@ -984,7 +984,7 @@ class WC_Payments_Dev_Tools {
 						/>
 					</label><br/>
 					<p class="description checkbox-description">All WPCOM requests (<code>*.wordpress.com</code>) will
-						be proxied through the given proxy.<br>By default it proxies through your local WCPay Server
+						be proxied through the given proxy.<br>By default it proxies through your local Transact Platform Server
 						(Docker container). Empty and save to <em>revert</em> to the default proxy.<br>Note: <strong>In
 							general, you don't need to proxy.</strong> If you <em>"Redirect WCPay API requests"</em>
 						then you probably want to proxy them also.</p>
@@ -1160,13 +1160,13 @@ class WC_Payments_Dev_Tools {
 				<?php
 				$connected_to_server = self::is_connected_to_server();
 				if ( ! $connected_to_server ) { ?>
-					<h3 class="has-description">⛔️ The store can't talk with the WCPay server!</h3>
+					<h3 class="has-description">⛔️ The store can't talk with the Transact Platform server!</h3>
 					<p class="description">Check your environment and make sure that WPCOM/Jetpack connection is set up.</p>
 				<?php } else {
 					$wpcom_blog_id     = self::get_blog_id();
 					$stripe_account_id = WC_Payments::get_account_service()->get_stripe_account_id();
 					?>
-					<h3 class="has-description">✅ The store is connected to the WCPay server!</h3>
+					<h3 class="has-description">✅ The store is connected to the Transact Platform server!</h3>
 
 					<h3 class="has-description">
 						WP.com blog ID:
@@ -1211,7 +1211,7 @@ class WC_Payments_Dev_Tools {
 			<div class="inside">
 				<h3 class="has-description"><a href="<?php echo self::get_onboarding_url( true ) ?>" onclick='return confirm("Are you sure?\nA new test Stripe account will be created for your store during the onboarding process.");'>Re-onboard with WCPay</a></h3>
 				<p class="description">Onboard with a new Stripe account (proxied A12s only).</p>
-				<h3 class="has-description"><a href="<?php echo wp_nonce_url( add_query_arg( [ 'wcpaydev-update-stripe-on-server' => 'yes' ], self::get_settings_url() ), 'wcpaydev-update-stripe-on-server' ); ?>">Force update WCPay Server Stripe cache</a></h3>
+				<h3 class="has-description"><a href="<?php echo wp_nonce_url( add_query_arg( [ 'wcpaydev-update-stripe-on-server' => 'yes' ], self::get_settings_url() ), 'wcpaydev-update-stripe-on-server' ); ?>">Force update Transact Platform Server Stripe cache</a></h3>
 				<p class="description">Useful when you don't use <a class="external-link" href="https://github.com/Automattic/woocommerce-payments-server/blob/trunk/local/README.md#5-listen-to-webhooks" target="_blank">webhooks listening</a> on your local server.</p>
 				<h3 class="has-description"><a href="<?php echo wp_nonce_url( add_query_arg( [ 'wcpaydev-clear-options' => 'yes' ], self::get_settings_url() ), 'wcpaydev-clear-options' ); ?>">Delete saved WCPay Gateway settings</a></h3>
 				<p class="description">Deletes the DB option. Go to <a href="<?php echo self::get_wcpay_settings_url(); ?>">the settings page</a> to save/update.</p>
@@ -1456,7 +1456,7 @@ class WC_Payments_Dev_Tools {
 	}
 
 	/**
-	 * Forces the update of the cached Stripe account data on the WCPay server.
+	 * Forces the update of the cached Stripe account data on the Transact Platform server.
 	 *
 	 * @return bool
 	 */
@@ -1668,7 +1668,7 @@ class WC_Payments_Dev_Tools {
 	}
 
 	/**
-	 * Whether the site can communicate with the WCPay server (i.e. Jetpack connection has been established).
+	 * Whether the site can communicate with the Transact Platform server (i.e. Jetpack connection has been established).
 	 *
 	 * @return bool
 	 */

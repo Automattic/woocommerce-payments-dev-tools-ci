@@ -54,7 +54,7 @@ class WC_Payments_Dev_Tools_CLI extends WP_CLI_Command {
 	}
 
 	/**
-	 * Redirects WCPay server requests to specified URL.
+	 * Redirects Transact Platform server requests to specified URL.
 	 *
 	 * ## OPTIONS
 	 *
