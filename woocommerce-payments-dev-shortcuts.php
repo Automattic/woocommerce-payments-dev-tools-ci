@@ -300,7 +300,7 @@ class WooCommerce_Payments_Dev_Shortcuts {
 	 */
 	public function view_latest_log() {
 		$log_files       = WC_Log_Handler_File::get_log_files();
-		$prefix          = 'woocommerce-payments-';
+		$prefix          = 'woopayments-';
 		$regex           = '/^' . preg_quote( $prefix, '/' ) . '(\d+)-(\d+)-(\d+)-\w+-log$/';
 		$latest_log_file = null;
 		$latest_log_time = null;
@@ -319,7 +319,7 @@ class WooCommerce_Payments_Dev_Shortcuts {
 			$timestamp = strtotime( $matches[1] . '-' . $matches[2] . '-' . $matches[3] . ' 00:00' );
 
 			if ( is_null( $latest_log_time ) || $latest_log_time < $timestamp ) {
-				$latest_log_file = $key;
+				$latest_log_file = preg_replace('/-\w+\.log$/', '', $filename);
 				$latest_log_time = $timestamp;
 			}
 		}
@@ -332,7 +332,7 @@ class WooCommerce_Payments_Dev_Shortcuts {
 			exit;
 		}
 
-		$url = add_query_arg( 'log_file', $latest_log_file, admin_url( 'admin.php?page=wc-status&tab=logs' ) );
+		$url = add_query_arg( 'file_id', $latest_log_file, admin_url( 'admin.php?page=wc-status&tab=logs&view=single_file' ) );
 		wp_safe_redirect( $url );
 		exit;
 	}
