@@ -83,7 +83,6 @@ class WC_Payments_Dev_Tools {
 		add_filter( 'wcpay_dev_mode', [ __CLASS__, 'should_activate_dev_mode' ], 10, 1 );
 		add_filter( 'pre_http_request', [ __CLASS__, 'maybe_redirect_api_request' ], 10, 3 );
 		add_action( 'http_api_curl', [ __CLASS__, 'maybe_proxy_wpcom_request' ], 10, 3 );
-		add_filter( 'wc_payments_get_onboarding_data_args', [ __CLASS__, 'maybe_force_re_onboarding' ], 10, 1 );
 		add_filter( 'wcpay_api_request_headers', [ __CLASS__, 'add_wcpay_request_headers' ], 10, 1 );
 		add_filter( 'upgrader_pre_download', [ __CLASS__, 'maybe_override_wcpay_version' ], 10, 4 );
 		add_filter( 'wcpay_api_request_response', [ __CLASS__, 'maybe_retry_server_wp_cron_redirects' ], 10, 4 );
@@ -317,27 +316,6 @@ class WC_Payments_Dev_Tools {
 	}
 
 	/**
-	 * Adds force_on_boarding flag to the onboarding request.
-	 *
-	 * @param array $args The WCPay onboarding arguments.
-	 *
-	 * @return array The changed arguments.
-	 */
-	public static function maybe_force_re_onboarding( array $args ): array {
-		// Be extra sure when we add the force_on_boarding flag to the Transact Platform server onboarding request. Just to be safe.
-		if ( isset( $_GET['force-reonboarding'] )
-		     && 'yes' === $_GET['force-reonboarding']
-		     && isset( $_GET['wcpay-connect'] )
-		     && isset( $_REQUEST['_frobnonce'] )
-		     && wp_verify_nonce( $_REQUEST['_frobnonce'], 'force-reonboarding' ) ) {
-
-			$args['force_on_boarding'] = true;
-		}
-
-		return $args;
-	}
-
-	/**
 	 * Adds xdebug cookie to the WCPay API requests.
 	 *
 	 * @param array $headers
@@ -531,25 +509,10 @@ class WC_Payments_Dev_Tools {
 	/**
 	 * Returns the URL to use for reaching the WCPay onboarding screen.
 	 *
-	 * @param bool $force_re_onboard Optional. Whether to force the creation of a new Stripe account when
-	 *                               following the onboarding URL. This behavior is controlled by the Transact Platform Server,
-	 *                               and it is only available to proxied A12s.
-	 *
 	 * @return string The URL.
 	 */
-	public static function get_onboarding_url( bool $force_re_onboard = false ): string {
-		$onboarding_url = self::get_connect_url();
-
-		if ( $force_re_onboard ) {
-			// Add dedicated nonce for the force reonboarding action.
-			$onboarding_url = wp_nonce_url(
-				add_query_arg( [ 'force-reonboarding' => 'yes' ], $onboarding_url ),
-				'force-reonboarding',
-				'_frobnonce'
-			);
-		}
-
-		return $onboarding_url;
+	public static function get_onboarding_url(): string {
+		return self::get_connect_url();
 	}
 
 	/**
@@ -1209,8 +1172,6 @@ class WC_Payments_Dev_Tools {
 		<div class="stuffbox">
 			<h2>Actions</h2>
 			<div class="inside">
-				<h3 class="has-description"><a href="<?php echo self::get_onboarding_url( true ) ?>" onclick='return confirm("Are you sure?\nA new test Stripe account will be created for your store during the onboarding process.");'>Re-onboard with WCPay</a></h3>
-				<p class="description">Onboard with a new Stripe account (proxied A12s only).</p>
 				<h3 class="has-description"><a href="<?php echo wp_nonce_url( add_query_arg( [ 'wcpaydev-update-stripe-on-server' => 'yes' ], self::get_settings_url() ), 'wcpaydev-update-stripe-on-server' ); ?>">Force update Transact Platform Server Stripe cache</a></h3>
 				<p class="description">Useful when you don't use <a class="external-link" href="https://github.com/Automattic/woocommerce-payments-server/blob/trunk/local/README.md#5-listen-to-webhooks" target="_blank">webhooks listening</a> on your local server.</p>
 				<h3 class="has-description"><a href="<?php echo wp_nonce_url( add_query_arg( [ 'wcpaydev-clear-options' => 'yes' ], self::get_settings_url() ), 'wcpaydev-clear-options' ); ?>">Delete saved WCPay Gateway settings</a></h3>
