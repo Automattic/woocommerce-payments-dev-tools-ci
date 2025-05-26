@@ -28,7 +28,6 @@ class WC_Payments_Dev_Tools {
 	const BILLING_CLOCKS_OPTION = 'wcpaydev_wcpay_billing_clock';
 	const BILLING_CLOCK_SECRET_KEY_OPTION = 'wcpay_billing_clock_secret';
 	const SUBSCRIPTIONS = '_wcpay_feature_subscriptions';
-	const TOKENIZED_CART_ECE_FLAG_NAME = '_wcpay_feature_tokenized_cart_ece';
 	const CAPITAL = '_wcpay_feature_capital';
 	const DOCUMENTS = '_wcpay_feature_documents';
 	const WOOPAY_OVERRIDE_PLATFORM_CHECKOUT_ELIGIBLE = 'override_woopay_eligible';
@@ -668,7 +667,6 @@ class WC_Payments_Dev_Tools {
 		self::save_option_from_checkbox( self::DOCUMENTS );
 
 		self::save_option_from_checkbox( self::V2_GATEWAY_FLAG_NAME );
-		self::save_option_from_checkbox( self::TOKENIZED_CART_ECE_FLAG_NAME );
 		self::save_option_from_checkbox( self::WOOPAY_OVERRIDE_PLATFORM_CHECKOUT_ELIGIBLE, true );
 		self::save_option( self::WOOPAY_OVERRIDE_PLATFORM_CHECKOUT_ELIGIBLE_VALUE );
 		self::save_option_from_checkbox( self::WOOPAY_OVERRIDE_PLATFORM_CHECKOUT_DEFAULT_OPT_IN, true );
@@ -1014,7 +1012,6 @@ class WC_Payments_Dev_Tools {
 					</div>
 
 					<?php self::render_checkbox( self::V2_GATEWAY_FLAG_NAME, 'Enable V2 gateway' ); ?>
-					<?php self::render_checkbox( self::TOKENIZED_CART_ECE_FLAG_NAME, 'Enable Cart-Token implementation for ECE' ); ?>
 					<?php self::render_checkbox( self::CAPITAL, 'Enable Stripe Capital' ); ?>
 					<?php self::render_checkbox( self::DOCUMENTS, 'Enable WCPay Documents section' ); ?>
 
@@ -1286,9 +1283,6 @@ class WC_Payments_Dev_Tools {
 			$enabled_options[] = 'Account Documents section';
 		}
 
-		if ( get_option( self::TOKENIZED_CART_ECE_FLAG_NAME, false ) ) {
-			$enabled_options[] = 'Tokenized cart ECE';
-		}
 
 		if ( get_option( self::WOOPAY_OVERRIDE_PLATFORM_CHECKOUT_ELIGIBLE, '0' ) ) {
 			$overriding_value  = get_option( self::WOOPAY_OVERRIDE_PLATFORM_CHECKOUT_ELIGIBLE_VALUE, '0' ) ? 'true' : 'false';
