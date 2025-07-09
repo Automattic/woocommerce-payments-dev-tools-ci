@@ -29,7 +29,6 @@ class WC_Payments_Dev_Tools {
 	const BILLING_CLOCK_SECRET_KEY_OPTION = 'wcpay_billing_clock_secret';
 	const SUBSCRIPTIONS = '_wcpay_feature_subscriptions';
 	const CAPITAL = '_wcpay_feature_capital';
-	const DOCUMENTS = '_wcpay_feature_documents';
 	const WOOPAY_OVERRIDE_PLATFORM_CHECKOUT_ELIGIBLE = 'override_woopay_eligible';
 	const WOOPAY_OVERRIDE_PLATFORM_CHECKOUT_ELIGIBLE_VALUE = 'override_woopay_eligible_value';
 	const WOOPAY_OVERRIDE_PLATFORM_CHECKOUT_DEFAULT_OPT_IN = 'override_woopay_default_optin';
@@ -664,7 +663,6 @@ class WC_Payments_Dev_Tools {
 
 		self::save_option_from_checkbox( self::SUBSCRIPTIONS, true );
 		self::save_option_from_checkbox( self::CAPITAL );
-		self::save_option_from_checkbox( self::DOCUMENTS );
 
 		self::save_option_from_checkbox( self::V2_GATEWAY_FLAG_NAME );
 		self::save_option_from_checkbox( self::WOOPAY_OVERRIDE_PLATFORM_CHECKOUT_ELIGIBLE, true );
@@ -1013,7 +1011,6 @@ class WC_Payments_Dev_Tools {
 
 					<?php self::render_checkbox( self::V2_GATEWAY_FLAG_NAME, 'Enable V2 gateway' ); ?>
 					<?php self::render_checkbox( self::CAPITAL, 'Enable Stripe Capital' ); ?>
-					<?php self::render_checkbox( self::DOCUMENTS, 'Enable WCPay Documents section' ); ?>
 
 					<h4>New Payment Process Factors</h4>
 
@@ -1278,11 +1275,6 @@ class WC_Payments_Dev_Tools {
 		if ( get_option( self::CAPITAL, false ) ) {
 			$enabled_options[] = 'Stripe Capital';
 		}
-
-		if ( get_option( self::DOCUMENTS, false ) ) {
-			$enabled_options[] = 'Account Documents section';
-		}
-
 
 		if ( get_option( self::WOOPAY_OVERRIDE_PLATFORM_CHECKOUT_ELIGIBLE, '0' ) ) {
 			$overriding_value  = get_option( self::WOOPAY_OVERRIDE_PLATFORM_CHECKOUT_ELIGIBLE_VALUE, '0' ) ? 'true' : 'false';
