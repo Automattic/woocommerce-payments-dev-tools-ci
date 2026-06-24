@@ -1674,9 +1674,16 @@ class WC_Payments_Dev_Tools {
 					self::WCPAY_PLUGIN_REPOSITORY
 				)
 			);
-			if ( ! is_wp_error( $response ) ) {
-				$cache_contents = wp_remote_retrieve_body( $response );
-				file_put_contents( $cache_filename, $cache_contents );
+			if ( ! is_wp_error( $response ) && 200 === (int) wp_remote_retrieve_response_code( $response ) ) {
+				$body = wp_remote_retrieve_body( $response );
+				// Only cache a valid releases *list*. A rate-limited / error response decodes
+				// to an error object (e.g. {"message":"API rate limit exceeded"}); caching it
+				// would poison the cache for the whole TTL and fatal the settings page on render.
+				$decoded = json_decode( $body, true );
+				if ( is_array( $decoded ) && ( empty( $decoded ) || is_array( reset( $decoded ) ) ) ) {
+					$cache_contents = $body;
+					file_put_contents( $cache_filename, $cache_contents );
+				}
 			}
 		} else {
 			$cache_contents = file_get_contents( $cache_filename );
@@ -1699,6 +1706,13 @@ class WC_Payments_Dev_Tools {
 		}
 
 		$release_map_func = function ( $value ) {
+			// Defend against a non-release entry: a rate-limited / error GitHub response
+			// decodes to an associative array of strings, so $value can be a string here.
+			// Accessing $value['assets'] on a string is a fatal TypeError on PHP 8.
+			if ( ! is_array( $value ) || ! isset( $value['assets'] ) || ! is_array( $value['assets'] ) ) {
+				return [];
+			}
+
 			$assets_filter_func = function ( $value ) {
 				return self::WCPAY_ASSET_FILENAME === $value['name'];
 			};
